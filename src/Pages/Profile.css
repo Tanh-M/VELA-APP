@@ -1,0 +1,130 @@
+.profile-page h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.profile-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.profile-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 2rem;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.profile-card h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+}
+
+.profile-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  width: 100%;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.profile-devices-count {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 1.25rem;
+}
+
+.logout-btn:hover {
+  background-color: var(--danger);
+  color: white;
+}
+
+.profile-page {
+  padding-bottom: 2rem;
+}
+
+.danger-zone {
+  max-width: 400px;
+  margin-top: 1.5rem;
+  border: 1px solid var(--danger);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  background-color: var(--bg-surface);
+}
+
+.danger-zone h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--danger);
+  margin-bottom: 6px;
+}
+
+.danger-zone p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.delete-account-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--danger);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.delete-account-btn:hover {
+  opacity: 0.85;
+}
+
+@media (max-width: 480px) {
+  .profile-card,
+  .danger-zone {
+    max-width: 100%;
+  }
+}

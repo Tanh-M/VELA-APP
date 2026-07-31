@@ -1,0 +1,45 @@
+/* ===== Variables de couleurs (mode clair par défaut) ===== */
+:root {
+  color-scheme: light;
+  --bg-primary: #F7FAFD;
+  --bg-surface: #FFFFFF;
+  --text-primary: #0C1B2A;
+  --text-secondary: #5A6B7A;
+  --accent: #185FA5;
+  --border: #E1E8EF;
+  --danger: #D85A30;
+  --success: #3E8E5A;
+}
+/* ===== Variables de couleurs (mode sombre) ===== */
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-primary: #0B1420;
+  --bg-surface: #14202E;
+  --text-primary: #E8EEF4;
+  --text-secondary: #9AAAB8;
+  --accent: #4A9DE0;
+  --border: #223244;
+  --danger: #E07856;
+  --success: #5DBE7F;
+}
+/* ===== Réinitialisation de base ===== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===== Reglement du soucis de flash , react fond blanc par defaut  ===== */
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html, body, #root {
+  background-color: var(--bg-primary);
+  min-height: 100%;
+}
