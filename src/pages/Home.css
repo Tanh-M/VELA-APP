@@ -1,7 +1,9 @@
+/* ===== Structure générale de la page ===== */
 .home-page {
   max-width: 100%;
 }
 
+/* ===== En-tête ===== */
 .home-header {
   display: flex;
   align-items: center;
@@ -36,6 +38,21 @@
   gap: 12px;
 }
 
+/* Bouton FAQ : forme pilule, couleur ambre pour se distinguer des autres boutons */
+.home-faq-btn {
+  background-color: #FEF3C7;
+  color: #78350F;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.home-faq-btn:hover {
+  background-color: #FDE68A;
+}
+
 .home-link-btn {
   font-size: 0.88rem;
   color: var(--text-secondary);
@@ -53,11 +70,13 @@
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Légère élévation au survol du bouton principal */
 .home-cta-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(24, 95, 165, 0.35);
 }
 
+/* ===== Section principale (hero) ===== */
 .home-hero {
   position: relative;
   text-align: center;
@@ -65,6 +84,7 @@
   max-width: 640px;
   margin: 0 auto;
   border-radius: 24px;
+  /* Dégradé circulaire discret derrière le titre, pour donner du relief */
   background: radial-gradient(circle at 50% 0%, rgba(24, 95, 165, 0.10), transparent 65%);
 }
 
@@ -108,6 +128,7 @@
   margin: 0.85rem 0 0;
 }
 
+/* ===== Grille des fonctionnalités ===== */
 .home-features {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -123,6 +144,7 @@
   transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
+/* Légère élévation + bordure colorée au survol */
 .feature-card:hover {
   transform: translateY(-3px);
   border-color: var(--accent);
@@ -150,4 +172,101 @@
   font-size: 0.82rem;
   color: var(--text-secondary);
   line-height: 1.4;
+}
+
+/* ===== Titres de section réutilisables ===== */
+.home-section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.home-section-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* ===== Section "Comment fonctionne Vela" ===== */
+.home-steps {
+  padding: 3rem 0;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.step-card {
+  /* position: relative nécessaire pour que .step-number (position: absolute)
+     se positionne par rapport à CETTE carte, et pas par rapport à toute la page */
+  position: relative;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+/* Pastille numérotée (1, 2, 3), positionnée en haut de chaque carte, à moitié en dehors */
+.step-number {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.75rem auto 0.75rem;
+}
+
+.step-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.step-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .home-features {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Bouton "Mon espace" dans l'en-tête, avec icône + texte côte à côte */
+.home-dashboard-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }

@@ -1,0 +1,157 @@
+/* Titre et sous-titre de la page */
+.settings-page h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+/* Chaque section (Apparence, Seuils, Notifications) est une carte séparée */
+.settings-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  max-width: 500px;
+}
+
+.settings-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.settings-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+/* Une ligne de réglage classique : libellé à gauche, contrôle à droite */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* Groupe de seuils (un par mesure : température, fumée, gaz) */
+.threshold-group {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.threshold-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.threshold-inputs {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.threshold-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.threshold-inputs input {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+/* Interrupteur on/off personnalisé (remplace une case à cocher classique) */
+.switch {
+  width: 40px;
+  height: 22px;
+  border-radius: 20px;
+  background-color: var(--border);
+  border: none;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.switch-on {
+  background-color: var(--accent);
+}
+
+.switch-dot {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: white;
+  /* Le point glisse d'un côté à l'autre quand on bascule l'interrupteur */
+  transition: transform 0.2s ease;
+}
+
+.switch-on .switch-dot {
+  transform: translateX(18px);
+}
+
+.settings-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  padding: 11px 22px;
+}
+
+/* Ligne de lien vers la FAQ, avec effet de survol discret */
+.settings-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+
+.settings-link-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+}
+
+.settings-link-row:hover .settings-link-left {
+  color: var(--accent);
+}

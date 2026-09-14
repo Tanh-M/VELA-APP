@@ -1,3 +1,10 @@
+/* Augmente la taille de police de base : tout le site utilise des unités "rem",
+   donc ce seul réglage agrandit proportionnellement TOUT le texte de l'application,
+   sans avoir à modifier chaque composant un par un */
+html {
+  font-size: 17px; /* 16px = taille par défaut du navigateur, on l'augmente légèrement */
+}
+
 /* ===== Variables de couleurs (mode clair par défaut) ===== */
 :root {
   color-scheme: light;
@@ -10,8 +17,8 @@
   --danger: #D85A30;
   --success: #3E8E5A;
 }
-/* ===== Variables de couleurs (mode sombre) ===== */
 
+/* ===== Variables de couleurs (mode sombre) ===== */
 [data-theme="dark"] {
   color-scheme: dark;
   --bg-primary: #0B1420;
@@ -23,7 +30,6 @@
   --danger: #E07856;
   --success: #5DBE7F;
 }
-/* ===== Réinitialisation de base ===== */
 
 * {
   margin: 0;
@@ -31,7 +37,6 @@
   box-sizing: border-box;
 }
 
-/* ===== Reglement du soucis de flash , react fond blanc par defaut  ===== */
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
   background-color: var(--bg-primary);
@@ -42,4 +47,62 @@ body {
 html, body, #root {
   background-color: var(--bg-primary);
   min-height: 100%;
+}
+
+/* ===== Animation d'entrée générique : légère montée + fondu ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.35s ease-out;
+}
+
+.sensor-grid > *,
+.feature-card,
+.step-card {
+  animation: fadeInUp 0.4s ease-out backwards;
+}
+
+.sensor-grid > *:nth-child(1) { animation-delay: 0.05s; }
+.sensor-grid > *:nth-child(2) { animation-delay: 0.1s; }
+.sensor-grid > *:nth-child(3) { animation-delay: 0.15s; }
+
+/* ===== Animations réutilisables pour la page FAQ (et ailleurs si besoin) ===== */
+
+/* Fondu simple, pour les titres */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Glissement depuis la gauche, avec fondu */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Léger zoom d'apparition, pour les cartes */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

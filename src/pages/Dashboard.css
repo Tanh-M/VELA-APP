@@ -37,17 +37,63 @@
   padding: 10px 20px;
 }
 
-.dashboard-no-chart {
+/* Bannière verte d'état système, en haut du Dashboard une fois qu'il y a des appareils */
+.status-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #EAF3DE;
+  color: #27500A;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 1rem;
+}
+
+.status-banner-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.status-banner-sub {
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+/* Carte "Prochaines étapes", sous la grille de capteurs */
+.next-steps-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 2rem;
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+  padding: 1.25rem;
   margin-top: 1rem;
+  max-width: 400px;
 }
 
+.next-steps-card h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.next-step-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.step-done {
+  color: var(--success);
+}
+
+.step-pending {
+  color: var(--text-secondary);
+}
+
+/* ===== Responsive ===== */
 @media (max-width: 768px) {
   .sensor-grid {
     grid-template-columns: 1fr;

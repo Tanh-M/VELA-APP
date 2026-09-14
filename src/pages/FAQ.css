@@ -1,0 +1,290 @@
+.faq-page {
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  padding: 1.5rem 2rem;
+}
+
+.faq-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3rem;
+}
+
+.faq-back-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: gap 0.15s ease, color 0.15s ease;
+}
+
+/* Petite animation au survol : la flèche s'écarte légèrement du texte */
+.faq-back-link:hover {
+  color: var(--accent);
+  gap: 10px;
+}
+
+.home-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+}
+
+.logo-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+}
+
+.faq-content {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.faq-content h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+/* Animation d'apparition pour les titres (fondu simple) */
+.faq-title-animated {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.faq-page-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.faq-subtitle-animated {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.faq-second-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.step-card {
+  position: relative;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+/* Légère élévation au survol, cohérent avec le reste de l'app */
+.step-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+}
+
+/* backwards : la carte reste invisible jusqu'à ce que son délai (animation-delay,
+   défini en ligne dans le JSX) soit écoulé, plutôt que de clignoter avant */
+.step-card-animated {
+  animation: scaleIn 0.4s ease-out backwards;
+}
+
+.step-number {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.75rem auto 0.75rem;
+}
+
+.step-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+}
+
+.step-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.faq-item {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.faq-item:hover {
+  border-color: var(--accent);
+}
+
+/* Chaque question glisse depuis la gauche avec un léger décalage entre elles */
+.faq-item-animated {
+  animation: slideInLeft 0.4s ease-out backwards;
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  padding: 1rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.faq-chevron {
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.faq-chevron-open {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  padding: 0 1.25rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  text-align: left;
+}
+
+/* La réponse apparaît avec un léger fondu + descente, quand on ouvre la question */
+.faq-answer-open {
+  animation: fadeIn 0.25s ease-out;
+}
+
+.faq-suggest-card {
+  margin-top: 2.5rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.faq-suggest-animated {
+  animation: scaleIn 0.5s ease-out backwards;
+  animation-delay: 0.3s;
+}
+
+.faq-suggest-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.3rem;
+}
+
+.faq-suggest-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.faq-suggest-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+.faq-suggest-form textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+}
+
+.faq-suggest-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.faq-suggest-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  align-self: center;
+  padding: 10px 24px;
+  transition: transform 0.15s ease;
+}
+
+.faq-suggest-btn:hover {
+  transform: translateY(-1px);
+}
+
+.faq-suggest-success {
+  color: var(--success);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+}

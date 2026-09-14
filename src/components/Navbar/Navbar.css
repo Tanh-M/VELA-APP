@@ -1,3 +1,4 @@
+/* Barre horizontale du haut, présente sur toutes les pages internes */
 .navbar {
   height: 64px;
   background-color: var(--bg-surface);
@@ -20,6 +21,7 @@
   color: var(--text-primary);
 }
 
+/* Bouton hamburger : caché par défaut, visible seulement sur mobile (voir @media plus bas) */
 .navbar-menu-btn {
   display: none;
   background: none;
@@ -50,6 +52,7 @@
   color: var(--accent);
 }
 
+/* Cloche de notifications : position relative pour que le badge (position absolute) s'y ancre */
 .navbar-bell {
   position: relative;
 }
@@ -71,10 +74,21 @@
   padding: 0 4px;
 }
 
+/* Bloc avatar + nom : bouton transparent, PAS de fond en pilule/rectangle par défaut */
 .navbar-user {
   display: flex;
   align-items: center;
   gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+/* Un léger fond n'apparaît qu'au survol, jamais en permanence */
+.navbar-user:hover {
+  background-color: var(--bg-primary);
 }
 
 .navbar-avatar {
@@ -86,6 +100,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .navbar-username {
@@ -94,6 +109,7 @@
   font-weight: 500;
 }
 
+/* ===== Responsive : mobile ===== */
 @media (max-width: 768px) {
   .navbar-menu-btn {
     display: flex;
