@@ -1,29 +1,22 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sun, Moon, Save, HelpCircle, ChevronRight } from 'lucide-react';
+import { Sun, Moon, Save, HelpCircle, ChevronRight, BellRing } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import { getThresholds, saveThresholds } from '../utils/alertRules';
 import './Settings.css';
 
 // Page Paramètres : apparence, seuils d'alerte, notifications, aide
 function Settings() {
-  // Thème actuel (clair/sombre) et fonction pour basculer, partagés avec toute l'app
   const { theme, toggleTheme } = useTheme();
-
-  // Initialise le formulaire avec les seuils actuels (par défaut ou déjà personnalisés
-  // par l'utilisateur, sauvegardés dans le localStorage)
   const [thresholds, setThresholds] = useState(getThresholds());
-
-  // Interrupteurs de notification : pour l'instant de simples préférences visuelles,
-  // pas encore reliées à un vrai système d'envoi de notifications
-  const [notifPush, setNotifPush] = useState(true);
   const [notifEmail, setNotifEmail] = useState(false);
-
-  // Affiche un message de confirmation temporaire après l'enregistrement
   const [saved, setSaved] = useState(false);
 
-  // Met à jour UN seuil précis (ex: temperature.moyen) dans le state local,
-  // sans toucher aux autres valeurs déjà saisies
+  // Gestion de l'activation des notifications push (déclenchée par un vrai clic,
+  // obligatoire pour que le navigateur affiche la popup de permission)
+  const { subscribe, status: pushStatus, errorMessage: pushError } = usePushNotifications();
+
   function updateThreshold(category, level, value) {
     setThresholds((prev) => ({
       ...prev,
@@ -31,12 +24,9 @@ function Settings() {
     }));
   }
 
-  // Sauvegarde les seuils modifiés dans le localStorage, utilisés ensuite
-  // partout où generateAlerts() est appelé (Dashboard, Alertes)
   function handleSave() {
     saveThresholds(thresholds);
     setSaved(true);
-    // Le message de confirmation disparaît tout seul après 2 secondes
     setTimeout(() => setSaved(false), 2000);
   }
 
@@ -64,90 +54,69 @@ function Settings() {
           Définissez à partir de quelles valeurs une alerte moyenne ou critique se déclenche.
         </p>
 
-        {/* Température */}
         <div className="threshold-group">
           <span className="threshold-label">Température (°C)</span>
           <div className="threshold-inputs">
             <label>
               Moyen
-              <input
-                type="number"
-                value={thresholds.temperature.moyen}
-                onChange={(e) => updateThreshold('temperature', 'moyen', e.target.value)}
-              />
+              <input type="number" value={thresholds.temperature.moyen} onChange={(e) => updateThreshold('temperature', 'moyen', e.target.value)} />
             </label>
             <label>
               Critique
-              <input
-                type="number"
-                value={thresholds.temperature.critique}
-                onChange={(e) => updateThreshold('temperature', 'critique', e.target.value)}
-              />
+              <input type="number" value={thresholds.temperature.critique} onChange={(e) => updateThreshold('temperature', 'critique', e.target.value)} />
             </label>
           </div>
         </div>
 
-        {/* Fumée */}
         <div className="threshold-group">
           <span className="threshold-label">Fumée (%)</span>
           <div className="threshold-inputs">
             <label>
               Moyen
-              <input
-                type="number"
-                value={thresholds.smoke.moyen}
-                onChange={(e) => updateThreshold('smoke', 'moyen', e.target.value)}
-              />
+              <input type="number" value={thresholds.smoke.moyen} onChange={(e) => updateThreshold('smoke', 'moyen', e.target.value)} />
             </label>
             <label>
               Critique
-              <input
-                type="number"
-                value={thresholds.smoke.critique}
-                onChange={(e) => updateThreshold('smoke', 'critique', e.target.value)}
-              />
+              <input type="number" value={thresholds.smoke.critique} onChange={(e) => updateThreshold('smoke', 'critique', e.target.value)} />
             </label>
           </div>
         </div>
 
-        {/* Gaz */}
         <div className="threshold-group">
           <span className="threshold-label">Gaz (%)</span>
           <div className="threshold-inputs">
             <label>
               Moyen
-              <input
-                type="number"
-                value={thresholds.gas.moyen}
-                onChange={(e) => updateThreshold('gas', 'moyen', e.target.value)}
-              />
+              <input type="number" value={thresholds.gas.moyen} onChange={(e) => updateThreshold('gas', 'moyen', e.target.value)} />
             </label>
             <label>
               Critique
-              <input
-                type="number"
-                value={thresholds.gas.critique}
-                onChange={(e) => updateThreshold('gas', 'critique', e.target.value)}
-              />
+              <input type="number" value={thresholds.gas.critique} onChange={(e) => updateThreshold('gas', 'critique', e.target.value)} />
             </label>
           </div>
         </div>
       </div>
 
-      {/* ===== Section Notifications ===== */}
+      {/* ===== Section Notifications push : activation manuelle via clic ===== */}
       <div className="settings-card">
-        <h3>Notifications</h3>
+        <h3>Notifications push</h3>
+        <p className="settings-card-desc">
+          Recevez des alertes même lorsque Vela n'est pas ouvert dans votre navigateur.
+        </p>
+        <button className="theme-toggle-btn" onClick={subscribe} disabled={pushStatus === 'loading'}>
+          <BellRing size={16} />
+          {pushStatus === 'success' ? 'Notifications activées ✓' : 'Activer les notifications'}
+        </button>
+        {pushStatus === 'error' && (
+          <p className="auth-error" style={{ marginTop: '10px' }}>{pushError}</p>
+        )}
+      </div>
+
+      {/* ===== Section Notifications par email (préférence simple) ===== */}
+      <div className="settings-card">
+        <h3>Notifications par email</h3>
         <div className="settings-row">
-          <span>Notifications push</span>
-          <button
-            className={`switch ${notifPush ? 'switch-on' : ''}`}
-            onClick={() => setNotifPush(!notifPush)}
-          >
-            <span className="switch-dot" />
-          </button>
-        </div>
-        <div className="settings-row">
-          <span>Notifications par email</span>
+          <span>Recevoir un résumé par email</span>
           <button
             className={`switch ${notifEmail ? 'switch-on' : ''}`}
             onClick={() => setNotifEmail(!notifEmail)}
@@ -160,10 +129,6 @@ function Settings() {
       {/* ===== Section Aide : lien direct vers la FAQ ===== */}
       <div className="settings-card">
         <h3>Aide</h3>
-        {/* ?from=settings dans l'URL : permet à la page FAQ de savoir d'où l'utilisateur
-            vient, et donc de le ramener au bon endroit avec le bouton "Retour".
-            Utiliser l'URL plutôt que le state de navigation, car cette info doit
-            survivre à un rechargement complet de la page. */}
         <Link to="/faq?from=settings" className="settings-link-row">
           <div className="settings-link-left">
             <HelpCircle size={18} />

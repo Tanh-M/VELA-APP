@@ -3,22 +3,23 @@ import { Bell, User, Sun, Moon, Menu } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
-import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { generateAlerts } from '../../utils/alertRules';
 import { mockSensors } from '../../data/mockSensors';
 import './Navbar.css';
 
+// Navbar = barre du haut, présente sur toutes les pages internes
 function Navbar({ onMenuClick }) {
   const { theme, toggleTheme } = useTheme();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Notifications système classiques (Niveau 1 : app ouverte)
+  // Notifications système classiques (Niveau 1 : app ouverte, même en arrière-plan)
   useNotifications();
 
-  // Notifications push réelles (Niveau 2 : même app fermée), maintenant possible
-  // grâce au déploiement HTTPS sur Vercel
-  usePushNotifications();
+  // Note : les notifications push (Niveau 2) sont activées depuis la page
+  // Paramètres, via un bouton cliqué par l'utilisateur — pas ici automatiquement,
+  // car les navigateurs bloquent la popup de permission si elle n'est pas
+  // déclenchée par un vrai clic utilisateur.
 
   const alertCount = generateAlerts(mockSensors).length;
   const displayName = currentUser?.user_metadata?.full_name || currentUser?.email || 'Utilisateur';
