@@ -13,9 +13,14 @@ function Settings() {
   const [notifEmail, setNotifEmail] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Gestion de l'activation des notifications push (déclenchée par un vrai clic,
-  // obligatoire pour que le navigateur affiche la popup de permission)
+  // Gestion de l'activation des notifications push
   const { subscribe, status: pushStatus, errorMessage: pushError } = usePushNotifications();
+
+  // Fonction intermédiaire, pour vérifier dans la Console que le clic est bien détecté
+  function handlePushClick() {
+    console.log('clic detecté sur le bouton notifications');
+    subscribe();
+  }
 
   function updateThreshold(category, level, value) {
     setThresholds((prev) => ({
@@ -97,13 +102,13 @@ function Settings() {
         </div>
       </div>
 
-      {/* ===== Section Notifications push : activation manuelle via clic ===== */}
+      {/* ===== Section Notifications push ===== */}
       <div className="settings-card">
         <h3>Notifications push</h3>
         <p className="settings-card-desc">
           Recevez des alertes même lorsque Vela n'est pas ouvert dans votre navigateur.
         </p>
-        <button className="theme-toggle-btn" onClick={subscribe} disabled={pushStatus === 'loading'}>
+        <button className="theme-toggle-btn" onClick={handlePushClick} disabled={pushStatus === 'loading'}>
           <BellRing size={16} />
           {pushStatus === 'success' ? 'Notifications activées ✓' : 'Activer les notifications'}
         </button>
@@ -112,7 +117,7 @@ function Settings() {
         )}
       </div>
 
-      {/* ===== Section Notifications par email (préférence simple) ===== */}
+      {/* ===== Section Notifications par email ===== */}
       <div className="settings-card">
         <h3>Notifications par email</h3>
         <div className="settings-row">
@@ -126,7 +131,7 @@ function Settings() {
         </div>
       </div>
 
-      {/* ===== Section Aide : lien direct vers la FAQ ===== */}
+      {/* ===== Section Aide ===== */}
       <div className="settings-card">
         <h3>Aide</h3>
         <Link to="/faq?from=settings" className="settings-link-row">
