@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Sun, Moon, Save, HelpCircle, ChevronRight, BellRing } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import { sendPushNotification } from '../utils/sendPushNotification';
 import { getThresholds, saveThresholds } from '../utils/alertRules';
 import './Settings.css';
 
 // Page Paramètres : apparence, seuils d'alerte, notifications, aide
 function Settings() {
   const { theme, toggleTheme } = useTheme();
+  const { currentUser } = useAuth();
   const [thresholds, setThresholds] = useState(getThresholds());
   const [notifEmail, setNotifEmail] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -16,10 +19,16 @@ function Settings() {
   // Gestion de l'activation des notifications push
   const { subscribe, status: pushStatus, errorMessage: pushError } = usePushNotifications();
 
-  // Fonction intermédiaire, pour vérifier dans la Console que le clic est bien détecté
+  // Fonction intermédiaire, appelée par le clic sur le bouton d'activation
   function handlePushClick() {
     console.log('clic detecté sur le bouton notifications');
     subscribe();
+  }
+
+  // Envoie une vraie notification de test à l'utilisateur actuellement connecté,
+  // pour vérifier que le système fonctionne de bout en bout
+  async function handleTestNotification() {
+    await sendPushNotification(currentUser.id, 'Test Vela', 'Ceci est un test de notification push.');
   }
 
   function updateThreshold(category, level, value) {
@@ -114,6 +123,18 @@ function Settings() {
         </button>
         {pushStatus === 'error' && (
           <p className="auth-error" style={{ marginTop: '10px' }}>{pushError}</p>
+        )}
+
+        {/* Bouton de test temporaire : envoie une vraie notification à soi-même.
+            À retirer une fois les tests terminés et le système validé. */}
+        {pushStatus === 'success' && (
+          <button
+            className="theme-toggle-btn"
+            style={{ marginTop: '10px' }}
+            onClick={handleTestNotification}
+          >
+            Envoyer une notification de test
+          </button>
         )}
       </div>
 
