@@ -1,34 +1,56 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sun, Moon, Save, HelpCircle, ChevronRight, BellRing } from 'lucide-react';
+import { Sun, Moon, Save, HelpCircle, ChevronRight, BellRing, TestTube2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { sendPushNotification } from '../utils/sendPushNotification';
-import { getThresholds, saveThresholds } from '../utils/alertRules';
+import { getThresholds, saveThresholds, generateAlerts } from '../utils/alertRules';
+import { mockSensors } from '../data/mockSensors';
 import './Settings.css';
 
-// Page Paramètres : apparence, seuils d'alerte, notifications, aide
 function Settings() {
   const { theme, toggleTheme } = useTheme();
   const { currentUser } = useAuth();
   const [thresholds, setThresholds] = useState(getThresholds());
   const [notifEmail, setNotifEmail] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [simulating, setSimulating] = useState(false);
 
-  // Gestion de l'activation des notifications push
   const { subscribe, status: pushStatus, errorMessage: pushError } = usePushNotifications();
 
-  // Fonction intermédiaire, appelée par le clic sur le bouton d'activation
   function handlePushClick() {
-    console.log('clic detecté sur le bouton notifications');
     subscribe();
   }
 
-  // Envoie une vraie notification de test à l'utilisateur actuellement connecté,
-  // pour vérifier que le système fonctionne de bout en bout
-  async function handleTestNotification() {
-    await sendPushNotification(currentUser.id, 'Test Vela', 'Ceci est un test de notification push.');
+  // Simule un vrai dépassement de seuil : calcule les alertes à partir des
+  // données de capteurs (factices pour l'instant, réelles plus tard avec le
+  // matériel) selon les seuils actuellement configurés, et envoie une vraie
+  // notification push pour la première alerte détectée. Ça démontre le
+  // fonctionnement réel du système : seuil dépassé → notification envoyée.
+  async function handleSimulateAlert() {
+    setSimulating(true);
+
+    // Recalcule les alertes avec les seuils actuels (ceux définis plus haut
+    // dans cette même page, potentiellement modifiés par l'utilisateur)
+    const alerts = generateAlerts(mockSensors);
+
+    if (alerts.length === 0) {
+      alert("Aucun seuil n'est actuellement dépassé avec les données de test. Essayez d'abaisser un seuil ci-dessus.");
+      setSimulating(false);
+      return;
+    }
+
+    // Prend la première alerte détectée, et envoie une vraie notification
+    // avec son contenu réel (type d'anomalie + lieu concerné)
+    const firstAlert = alerts[0];
+    await sendPushNotification(
+      currentUser.id,
+      `Alerte ${firstAlert.severity} — ${firstAlert.location}`,
+      firstAlert.type
+    );
+
+    setSimulating(false);
   }
 
   function updateThreshold(category, level, value) {
@@ -49,7 +71,6 @@ function Settings() {
       <h1>Paramètres</h1>
       <p className="settings-subtitle">Personnalisez le comportement de votre plateforme</p>
 
-      {/* ===== Section Apparence ===== */}
       <div className="settings-card">
         <h3>Apparence</h3>
         <div className="settings-row">
@@ -61,7 +82,6 @@ function Settings() {
         </div>
       </div>
 
-      {/* ===== Section Seuils d'alerte ===== */}
       <div className="settings-card">
         <h3>Seuils d'alerte</h3>
         <p className="settings-card-desc">
@@ -111,11 +131,10 @@ function Settings() {
         </div>
       </div>
 
-      {/* ===== Section Notifications push ===== */}
       <div className="settings-card">
         <h3>Notifications push</h3>
         <p className="settings-card-desc">
-          Recevez des alertes même lorsque Vela n'est pas ouvert dans votre navigateur.
+          Recevez une notification dès qu'un seuil configuré ci-dessus est dépassé.
         </p>
         <button className="theme-toggle-btn" onClick={handlePushClick} disabled={pushStatus === 'loading'}>
           <BellRing size={16} />
@@ -125,20 +144,22 @@ function Settings() {
           <p className="auth-error" style={{ marginTop: '10px' }}>{pushError}</p>
         )}
 
-        {/* Bouton de test temporaire : envoie une vraie notification à soi-même.
-            À retirer une fois les tests terminés et le système validé. */}
+        {/* Simulation réaliste : calcule une vraie alerte à partir des seuils
+            configurés ci-dessus, et l'envoie en notification. Utile en attendant
+            que le matériel envoie de vraies données de capteurs. */}
         {pushStatus === 'success' && (
           <button
             className="theme-toggle-btn"
             style={{ marginTop: '10px' }}
-            onClick={handleTestNotification}
+            onClick={handleSimulateAlert}
+            disabled={simulating}
           >
-            Envoyer une notification de test
+            <TestTube2 size={16} />
+            {simulating ? 'Simulation...' : 'Simuler un dépassement de seuil'}
           </button>
         )}
       </div>
 
-      {/* ===== Section Notifications par email ===== */}
       <div className="settings-card">
         <h3>Notifications par email</h3>
         <div className="settings-row">
@@ -152,7 +173,6 @@ function Settings() {
         </div>
       </div>
 
-      {/* ===== Section Aide ===== */}
       <div className="settings-card">
         <h3>Aide</h3>
         <Link to="/faq?from=settings" className="settings-link-row">
