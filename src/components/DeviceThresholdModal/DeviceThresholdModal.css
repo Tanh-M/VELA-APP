@@ -1,0 +1,14 @@
+/* Réutilise le style de fond/carte déjà défini pour le formulaire d'ajout
+   d'appareil (device-form-backdrop, device-form dans Devices.css) */
+.threshold-modal {
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.threshold-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.25rem;
+}D

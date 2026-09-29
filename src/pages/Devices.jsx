@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, MoreVertical, Sliders } from 'lucide-react';
 import SensorCard from '../components/SensorCard/SensorCard';
+import DeviceThresholdModal from '../components/DeviceThresholdModal/DeviceThresholdModal';
 import { useDevices } from '../hooks/useDevices';
 import './Devices.css';
 
@@ -9,6 +10,11 @@ function Devices() {
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Garde en mémoire quel menu "⋮" est actuellement ouvert (id de l'appareil, ou null)
+  const [openMenuId, setOpenMenuId] = useState(null);
+  // Garde en mémoire l'appareil dont on édite actuellement les seuils (ou null)
+  const [editingDevice, setEditingDevice] = useState(null);
 
   async function handleAddDevice(e) {
     e.preventDefault();
@@ -66,6 +72,15 @@ function Devices() {
         </div>
       )}
 
+      {/* Fenêtre d'édition des seuils, affichée seulement si un appareil est en cours d'édition */}
+      {editingDevice && (
+        <DeviceThresholdModal
+          device={editingDevice}
+          onClose={() => setEditingDevice(null)}
+          onSaved={() => window.location.reload()} // simple pour l'instant : recharge pour refléter le changement
+        />
+      )}
+
       {loading ? (
         <p className="devices-loading">Chargement...</p>
       ) : devices.length === 0 ? (
@@ -73,15 +88,39 @@ function Devices() {
       ) : (
         <div className="sensor-grid">
           {devices.map((device) => (
-            <SensorCard
-              key={device.id}
-              name={device.name}
-              isOnline={device.is_online}
-              temperature={null}
-              smokeLevel={null}
-              gasLevel={null}
-              flameDetected={false}
-            />
+            // Conteneur positionné en relatif, pour ancrer le bouton "⋮" en absolu dans son coin
+            <div key={device.id} className="device-card-wrapper">
+              <button
+                className="device-menu-btn"
+                onClick={() => setOpenMenuId(openMenuId === device.id ? null : device.id)}
+              >
+                <MoreVertical size={16} />
+              </button>
+
+              {/* Petit menu déroulant, affiché seulement pour l'appareil actuellement ouvert */}
+              {openMenuId === device.id && (
+                <div className="device-menu-dropdown">
+                  <button
+                    onClick={() => {
+                      setEditingDevice(device);
+                      setOpenMenuId(null);
+                    }}
+                  >
+                    <Sliders size={14} />
+                    Modifier les seuils
+                  </button>
+                </div>
+              )}
+
+              <SensorCard
+                name={device.name}
+                isOnline={device.is_online}
+                temperature={null}
+                smokeLevel={null}
+                gasLevel={null}
+                flameDetected={false}
+              />
+            </div>
           ))}
         </div>
       )}

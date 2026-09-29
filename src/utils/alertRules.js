@@ -5,45 +5,62 @@ const DEFAULT_THRESHOLDS = {
   gas: { moyen: 30, critique: 60 },
 };
 
-// Récupère les seuils actuels : ceux personnalisés par l'utilisateur (localStorage)
-// s'ils existent, sinon on retombe sur les valeurs par défaut ci-dessus
+// Récupère les seuils globaux par défaut (personnalisés ou non, depuis localStorage)
 export function getThresholds() {
   const saved = localStorage.getItem('velaThresholds');
   return saved ? JSON.parse(saved) : DEFAULT_THRESHOLDS;
 }
 
-// Sauvegarde de nouveaux seuils choisis par l'utilisateur depuis la page Paramètres
 export function saveThresholds(thresholds) {
   localStorage.setItem('velaThresholds', JSON.stringify(thresholds));
 }
 
-// Analyse UN capteur et renvoie la liste des alertes qu'il déclenche actuellement,
-// en se basant sur les seuils en vigueur (par défaut ou personnalisés)
+// NOUVEAU : construit les seuils EFFECTIFS pour un appareil précis, en combinant
+// ses éventuelles valeurs personnalisées (stockées sur l'appareil lui-même dans
+// Supabase) avec les seuils globaux par défaut, colonne par colonne.
+// Si l'appareil n'a AUCUNE personnalisation, on retombe entièrement sur les
+// seuils par défaut.
+export function getEffectiveThresholds(device) {
+  const defaults = getThresholds();
+
+  return {
+    temperature: {
+      moyen: device.temp_moyen ?? defaults.temperature.moyen,
+      critique: device.temp_critique ?? defaults.temperature.critique,
+    },
+    smoke: {
+      moyen: device.smoke_moyen ?? defaults.smoke.moyen,
+      critique: device.smoke_critique ?? defaults.smoke.critique,
+    },
+    gas: {
+      moyen: device.gas_moyen ?? defaults.gas.moyen,
+      critique: device.gas_critique ?? defaults.gas.critique,
+    },
+  };
+}
+
+// Analyse UN capteur et renvoie ses alertes, en utilisant SES seuils effectifs
+// (personnalisés si définis, sinon les seuils globaux par défaut)
 export function getAlertsForSensor(sensor) {
-  const THRESHOLDS = getThresholds();
+  const THRESHOLDS = getEffectiveThresholds(sensor);
   const alerts = [];
 
-  // La flamme est un cas particulier : binaire, toujours critique si détectée
   if (sensor.flameDetected) {
     alerts.push({ type: 'Flamme détectée', location: sensor.name, severity: 'critique' });
   }
 
-  // Température : on teste d'abord le seuil critique (le plus grave),
-  // pour ne générer qu'UNE alerte par mesure, jamais les deux à la fois
   if (sensor.temperature >= THRESHOLDS.temperature.critique) {
     alerts.push({ type: 'Température critique', location: sensor.name, severity: 'critique' });
   } else if (sensor.temperature >= THRESHOLDS.temperature.moyen) {
     alerts.push({ type: 'Température élevée', location: sensor.name, severity: 'moyen' });
   }
 
-  // Fumée : même logique
   if (sensor.smokeLevel >= THRESHOLDS.smoke.critique) {
     alerts.push({ type: 'Fumée critique', location: sensor.name, severity: 'critique' });
   } else if (sensor.smokeLevel >= THRESHOLDS.smoke.moyen) {
     alerts.push({ type: 'Fumée détectée', location: sensor.name, severity: 'moyen' });
   }
 
-  // Gaz : même logique
   if (sensor.gasLevel >= THRESHOLDS.gas.critique) {
     alerts.push({ type: 'Gaz critique', location: sensor.name, severity: 'critique' });
   } else if (sensor.gasLevel >= THRESHOLDS.gas.moyen) {
@@ -53,7 +70,6 @@ export function getAlertsForSensor(sensor) {
   return alerts;
 }
 
-// Analyse TOUS les capteurs fournis et renvoie la liste complète d'alertes
 export function generateAlerts(sensors) {
   let allAlerts = [];
   let idCounter = 1;
@@ -61,8 +77,6 @@ export function generateAlerts(sensors) {
   sensors.forEach((sensor) => {
     const sensorAlerts = getAlertsForSensor(sensor);
     sensorAlerts.forEach((alert) => {
-      // ...alert reprend toutes les propriétés déjà présentes (type, location, severity),
-      // on ajoute juste un id unique et un horodatage
       allAlerts.push({ id: idCounter++, ...alert, time: "Aujourd'hui" });
     });
   });
