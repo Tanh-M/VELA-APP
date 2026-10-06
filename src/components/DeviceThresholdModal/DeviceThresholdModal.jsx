@@ -1,116 +1,131 @@
 import { useState } from 'react';
-import { X, RotateCcw } from 'lucide-react';
-import { supabase } from '../../services/supabase';
-import { getThresholds } from '../../utils/alertRules';
-import './DeviceThresholdModal.css';
+import { Plus, X, MoreVertical, Sliders } from 'lucide-react';
+import SensorCard from '../components/SensorCard/SensorCard';
+import DeviceThresholdModal from '../components/DeviceThresholdModal/DeviceThresholdModal';
+import { useDevices } from '../hooks/useDevices';
+import './Devices.css';
 
-// Petite fenêtre modale permettant de personnaliser les seuils d'alerte
-// d'UN appareil précis, indépendamment des autres.
-function DeviceThresholdModal({ device, onClose, onSaved }) {
-  const defaults = getThresholds();
+function Devices() {
+  const { devices, loading, addDevice } = useDevices();
+  const [showForm, setShowForm] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialise le formulaire avec les valeurs personnalisées de l'appareil,
-  // ou à défaut les valeurs globales (juste pour l'affichage, tant que rien
-  // n'est explicitement personnalisé)
-  const [values, setValues] = useState({
-    temp_moyen: device.temp_moyen ?? defaults.temperature.moyen,
-    temp_critique: device.temp_critique ?? defaults.temperature.critique,
-    smoke_moyen: device.smoke_moyen ?? defaults.smoke.moyen,
-    smoke_critique: device.smoke_critique ?? defaults.smoke.critique,
-    gas_moyen: device.gas_moyen ?? defaults.gas.moyen,
-    gas_critique: device.gas_critique ?? defaults.gas.critique,
-  });
+  // Garde en mémoire quel menu "⋮" est actuellement ouvert (id de l'appareil, ou null)
+  const [openMenuId, setOpenMenuId] = useState(null);
+  // Garde en mémoire l'appareil dont on édite actuellement les seuils (ou null)
+  const [editingDevice, setEditingDevice] = useState(null);
 
-  function updateValue(field, value) {
-    setValues((prev) => ({ ...prev, [field]: Number(value) }));
-  }
+  async function handleAddDevice(e) {
+    e.preventDefault();
+    if (!newName.trim()) return;
 
-  // Sauvegarde les seuils personnalisés de cet appareil dans Supabase
-  async function handleSave() {
-    await supabase.from('devices').update(values).eq('id', device.id);
-    onSaved();
-    onClose();
-  }
-
-  // Retire toute personnalisation : l'appareil retombe sur les seuils globaux
-  async function handleReset() {
-    await supabase.from('devices').update({
-      temp_moyen: null, temp_critique: null,
-      smoke_moyen: null, smoke_critique: null,
-      gas_moyen: null, gas_critique: null,
-    }).eq('id', device.id);
-    onSaved();
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await addDevice(newName.trim());
+      setNewName('');
+      setShowForm(false);
+    } catch (err) {
+      alert("Erreur lors de l'ajout : " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
-    <div className="device-form-backdrop" onClick={onClose}>
-      <div className="device-form threshold-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="device-form-header">
-          <h3>Seuils — {device.name}</h3>
-          <button type="button" onClick={onClose}>
-            <X size={18} />
-          </button>
+    <div className="devices-page">
+      <div className="devices-header">
+        <div>
+          <h1>Appareils</h1>
+          <p className="devices-subtitle">Gérez vos détecteurs installés</p>
         </div>
-
-        <p className="settings-card-desc">
-          Ces seuils s'appliquent uniquement à cet appareil, indépendamment des autres.
-        </p>
-
-        <div className="threshold-group">
-          <span className="threshold-label">Température (°C)</span>
-          <div className="threshold-inputs">
-            <label>
-              Moyen
-              <input type="number" value={values.temp_moyen} onChange={(e) => updateValue('temp_moyen', e.target.value)} />
-            </label>
-            <label>
-              Critique
-              <input type="number" value={values.temp_critique} onChange={(e) => updateValue('temp_critique', e.target.value)} />
-            </label>
-          </div>
-        </div>
-
-        <div className="threshold-group">
-          <span className="threshold-label">Fumée (%)</span>
-          <div className="threshold-inputs">
-            <label>
-              Moyen
-              <input type="number" value={values.smoke_moyen} onChange={(e) => updateValue('smoke_moyen', e.target.value)} />
-            </label>
-            <label>
-              Critique
-              <input type="number" value={values.smoke_critique} onChange={(e) => updateValue('smoke_critique', e.target.value)} />
-            </label>
-          </div>
-        </div>
-
-        <div className="threshold-group">
-          <span className="threshold-label">Gaz (%)</span>
-          <div className="threshold-inputs">
-            <label>
-              Moyen
-              <input type="number" value={values.gas_moyen} onChange={(e) => updateValue('gas_moyen', e.target.value)} />
-            </label>
-            <label>
-              Critique
-              <input type="number" value={values.gas_critique} onChange={(e) => updateValue('gas_critique', e.target.value)} />
-            </label>
-          </div>
-        </div>
-
-        <div className="threshold-modal-actions">
-          <button type="button" className="theme-toggle-btn" onClick={handleReset}>
-            <RotateCcw size={14} />
-            Valeurs par défaut
-          </button>
-          <button type="button" className="auth-submit-btn" onClick={handleSave} style={{ width: 'auto', padding: '10px 20px' }}>
-            Enregistrer
-          </button>
-        </div>
+        <button className="add-device-btn" onClick={() => setShowForm(true)}>
+          <Plus size={16} />
+          Ajouter un détecteur
+        </button>
       </div>
+
+      {showForm && (
+        <div className="device-form-backdrop" onClick={() => setShowForm(false)}>
+          <form className="device-form" onClick={(e) => e.stopPropagation()} onSubmit={handleAddDevice}>
+            <div className="device-form-header">
+              <h3>Nouveau détecteur</h3>
+              <button type="button" onClick={() => setShowForm(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <label>
+              Nom / emplacement
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Ex : Garage, Cuisine..."
+                required
+                autoFocus
+              />
+            </label>
+            <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+              {isSubmitting ? 'Ajout...' : 'Ajouter'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Fenêtre d'édition des seuils, affichée seulement si un appareil est en cours d'édition */}
+      {editingDevice && (
+        <DeviceThresholdModal
+          device={editingDevice}
+          onClose={() => setEditingDevice(null)}
+          onSaved={() => window.location.reload()} // simple pour l'instant : recharge pour refléter le changement
+        />
+      )}
+
+      {loading ? (
+        <p className="devices-loading">Chargement...</p>
+      ) : devices.length === 0 ? (
+        <p className="no-devices">Aucun détecteur pour l'instant. Ajoutez-en un pour commencer.</p>
+      ) : (
+        <div className="sensor-grid">
+          {devices.map((device) => (
+            // Conteneur positionné en relatif, pour ancrer le bouton "⋮" en absolu dans son coin
+            <div key={device.id} className="device-card-wrapper">
+              <button
+                className="device-menu-btn"
+                onClick={() => setOpenMenuId(openMenuId === device.id ? null : device.id)}
+              >
+                <MoreVertical size={16} />
+              </button>
+
+              {/* Petit menu déroulant, affiché seulement pour l'appareil actuellement ouvert */}
+              {openMenuId === device.id && (
+                <div className="device-menu-dropdown">
+                  <button
+                    onClick={() => {
+                      setEditingDevice(device);
+                      setOpenMenuId(null);
+                    }}
+                  >
+                    <Sliders size={14} />
+                    Modifier les seuils
+                  </button>
+                </div>
+              )}
+
+              <SensorCard
+                name={device.name}
+                isOnline={device.is_online}
+                temperature={null}
+                smokeLevel={null}
+                gasLevel={null}
+                flameDetected={false}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-export default DeviceThresholdModal;
+export default Devices;
