@@ -1,51 +1,142 @@
-/* Conteneur de chaque fiche capteur, pour pouvoir ancrer le bouton "⋮" dans son coin */
-.device-card-wrapper {
-  position: relative;
+/* Les classes sont préfixées "dtm-" pour ne jamais entrer en conflit
+   avec celles de la page Paramètres */
+
+/* Fond sombre couvrant tout l'écran */
+.dtm-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
 }
 
-.device-menu-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 5;
+/* Carte centrale de la fenêtre (défile si l'écran est trop petit) */
+.dtm-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.dtm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.dtm-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dtm-close {
   background: none;
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
 }
 
-.device-menu-btn:hover {
-  background-color: var(--bg-primary);
+.dtm-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 1rem;
 }
 
-.device-menu-dropdown {
-  position: absolute;
-  top: 40px;
-  right: 12px;
-  z-index: 10;
-  background-color: var(--bg-surface);
+/* Un bloc par mesure (température, fumée, gaz) */
+.dtm-group {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.dtm-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.dtm-inputs {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.dtm-inputs label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.dtm-inputs input {
+  width: 90px;
+  padding: 6px 8px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  border-radius: 6px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.85rem;
 }
 
-.device-menu-dropdown button {
+/* Message d'erreur */
+.dtm-error {
+  background-color: #FCEBEB;
+  color: #791F1F;
+  font-size: 0.8rem;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-top: 0.75rem;
+  line-height: 1.4;
+}
+
+/* Boutons du bas : "par défaut" à gauche, "Enregistrer" à droite */
+.dtm-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 10px 14px;
-  background: none;
-  border: none;
-  font-size: 0.82rem;
-  color: var(--text-primary);
-  cursor: pointer;
-  white-space: nowrap;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 1.25rem;
 }
 
-.device-menu-dropdown button:hover {
+.dtm-reset {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.dtm-save {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.dtm-save:disabled,
+.dtm-reset:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

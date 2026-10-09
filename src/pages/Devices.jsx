@@ -1,21 +1,35 @@
 import { useState } from 'react';
-import { Plus, X, MoreVertical, Sliders } from 'lucide-react';
+import { Plus, X, MoreVertical, Sliders, Trash2 } from 'lucide-react';
 import SensorCard from '../components/SensorCard/SensorCard';
 import DeviceThresholdModal from '../components/DeviceThresholdModal/DeviceThresholdModal';
 import { useDevices } from '../hooks/useDevices';
 import './Devices.css';
 
+// Indique si un appareil a au moins un seuil personnalisé
+// (colonne différente de null) — sert à afficher l'étiquette "Seuils personnalisés"
+function hasCustomThresholds(device) {
+  return [
+    device.temp_moyen, device.temp_critique,
+    device.smoke_moyen, device.smoke_critique,
+    device.gas_moyen, device.gas_critique,
+  ].some((value) => value !== null && value !== undefined);
+}
+
 function Devices() {
-  const { devices, loading, addDevice } = useDevices();
+  const { devices, loading, addDevice, deleteDevice, refreshDevices } = useDevices();
+
+  // Formulaire d'ajout d'un détecteur
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Garde en mémoire quel menu "⋮" est actuellement ouvert (id de l'appareil, ou null)
+  // Id de l'appareil dont le menu "⋮" est ouvert (null = aucun)
   const [openMenuId, setOpenMenuId] = useState(null);
-  // Garde en mémoire l'appareil dont on édite actuellement les seuils (ou null)
+
+  // Appareil dont on modifie actuellement les seuils (null = aucun)
   const [editingDevice, setEditingDevice] = useState(null);
 
+  // Ajoute un nouveau détecteur
   async function handleAddDevice(e) {
     e.preventDefault();
     if (!newName.trim()) return;
@@ -32,6 +46,22 @@ function Devices() {
     }
   }
 
+  // Supprime un détecteur, après confirmation (action irréversible)
+  async function handleDeleteDevice(device) {
+    setOpenMenuId(null);
+
+    const confirmed = window.confirm(
+      `Supprimer le détecteur « ${device.name} » ? Toutes ses mesures seront aussi supprimées. Cette action est irréversible.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteDevice(device.id);
+    } catch (err) {
+      alert('Erreur lors de la suppression : ' + err.message);
+    }
+  }
+
   return (
     <div className="devices-page">
       <div className="devices-header">
@@ -45,6 +75,7 @@ function Devices() {
         </button>
       </div>
 
+      {/* Fenêtre d'ajout d'un détecteur */}
       {showForm && (
         <div className="device-form-backdrop" onClick={() => setShowForm(false)}>
           <form className="device-form" onClick={(e) => e.stopPropagation()} onSubmit={handleAddDevice}>
@@ -72,13 +103,18 @@ function Devices() {
         </div>
       )}
 
-      {/* Fenêtre d'édition des seuils, affichée seulement si un appareil est en cours d'édition */}
+      {/* Fenêtre de modification des seuils, affichée seulement si un appareil est en cours d'édition */}
       {editingDevice && (
         <DeviceThresholdModal
           device={editingDevice}
           onClose={() => setEditingDevice(null)}
-          onSaved={() => window.location.reload()} // simple pour l'instant : recharge pour refléter le changement
+          onSaved={refreshDevices}
         />
+      )}
+
+      {/* Voile invisible : un clic n'importe où en dehors du menu "⋮" le referme */}
+      {openMenuId && (
+        <div className="device-menu-overlay" onClick={() => setOpenMenuId(null)} />
       )}
 
       {loading ? (
@@ -88,7 +124,7 @@ function Devices() {
       ) : (
         <div className="sensor-grid">
           {devices.map((device) => (
-            // Conteneur positionné en relatif, pour ancrer le bouton "⋮" en absolu dans son coin
+            // Conteneur en position relative : ancre le bouton "⋮" dans le coin de SA fiche
             <div key={device.id} className="device-card-wrapper">
               <button
                 className="device-menu-btn"
@@ -97,7 +133,7 @@ function Devices() {
                 <MoreVertical size={16} />
               </button>
 
-              {/* Petit menu déroulant, affiché seulement pour l'appareil actuellement ouvert */}
+              {/* Menu déroulant, affiché seulement pour l'appareil dont le menu est ouvert */}
               {openMenuId === device.id && (
                 <div className="device-menu-dropdown">
                   <button
@@ -108,6 +144,10 @@ function Devices() {
                   >
                     <Sliders size={14} />
                     Modifier les seuils
+                  </button>
+                  <button className="device-menu-danger" onClick={() => handleDeleteDevice(device)}>
+                    <Trash2 size={14} />
+                    Supprimer l'appareil
                   </button>
                 </div>
               )}
@@ -120,6 +160,14 @@ function Devices() {
                 gasLevel={null}
                 flameDetected={false}
               />
+
+              {/* Étiquette visible uniquement si l'appareil a des seuils personnalisés */}
+              {hasCustomThresholds(device) && (
+                <p className="device-custom-tag">
+                  <Sliders size={12} />
+                  Seuils personnalisés
+                </p>
+              )}
             </div>
           ))}
         </div>

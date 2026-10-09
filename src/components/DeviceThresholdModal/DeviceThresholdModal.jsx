@@ -1,131 +1,184 @@
 import { useState } from 'react';
-import { Plus, X, MoreVertical, Sliders } from 'lucide-react';
-import SensorCard from '../components/SensorCard/SensorCard';
-import DeviceThresholdModal from '../components/DeviceThresholdModal/DeviceThresholdModal';
-import { useDevices } from '../hooks/useDevices';
-import './Devices.css';
+import { X, RotateCcw } from 'lucide-react';
+import { supabase } from '../../services/supabase';
+import { getThresholds } from '../../utils/alertRules';
+import './DeviceThresholdModal.css';
 
-function Devices() {
-  const { devices, loading, addDevice } = useDevices();
-  const [showForm, setShowForm] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+// Les 3 mesures configurables : libellé affiché + noms des colonnes Supabase associées
+const MEASURES = [
+  { label: 'Température (°C)', name: 'Température', moyen: 'temp_moyen', critique: 'temp_critique' },
+  { label: 'Fumée (%)', name: 'Fumée', moyen: 'smoke_moyen', critique: 'smoke_critique' },
+  { label: 'Gaz (%)', name: 'Gaz', moyen: 'gas_moyen', critique: 'gas_critique' },
+];
 
-  // Garde en mémoire quel menu "⋮" est actuellement ouvert (id de l'appareil, ou null)
-  const [openMenuId, setOpenMenuId] = useState(null);
-  // Garde en mémoire l'appareil dont on édite actuellement les seuils (ou null)
-  const [editingDevice, setEditingDevice] = useState(null);
+// Convertit les seuils globaux par défaut au format "nom de colonne → valeur"
+function getDefaultsByColumn() {
+  const d = getThresholds();
+  return {
+    temp_moyen: d.temperature.moyen,
+    temp_critique: d.temperature.critique,
+    smoke_moyen: d.smoke.moyen,
+    smoke_critique: d.smoke.critique,
+    gas_moyen: d.gas.moyen,
+    gas_critique: d.gas.critique,
+  };
+}
 
-  async function handleAddDevice(e) {
-    e.preventDefault();
-    if (!newName.trim()) return;
+// Fenêtre permettant de personnaliser les seuils d'UN appareil précis,
+// sans affecter les autres.
+// Props : device (l'appareil), onClose (ferme la fenêtre), onSaved (recharge la liste)
+function DeviceThresholdModal({ device, onClose, onSaved }) {
+  const defaultsByColumn = getDefaultsByColumn();
 
-    setIsSubmitting(true);
-    try {
-      await addDevice(newName.trim());
-      setNewName('');
-      setShowForm(false);
-    } catch (err) {
-      alert("Erreur lors de l'ajout : " + err.message);
-    } finally {
-      setIsSubmitting(false);
+  // Valeurs de départ : valeur personnalisée de l'appareil si elle existe,
+  // sinon valeur par défaut (juste pour l'affichage)
+  const initialValues = {};
+  Object.keys(defaultsByColumn).forEach((column) => {
+    initialValues[column] = device[column] ?? defaultsByColumn[column];
+  });
+
+  const [values, setValues] = useState(initialValues);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // Met à jour une valeur du formulaire (on garde le texte brut pendant la saisie)
+  function updateValue(column, value) {
+    setValues((prev) => ({ ...prev, [column]: value }));
+  }
+
+  // Envoie les valeurs à Supabase et vérifie que la modification a bien eu lieu
+  async function saveToDatabase(payload) {
+    setSaving(true);
+
+    const { data, error: dbError } = await supabase
+      .from('devices')
+      .update(payload)
+      .eq('id', device.id)
+      .select();
+
+    // Erreur renvoyée par Supabase (ex: colonne inexistante)
+    if (dbError) {
+      setError('Enregistrement impossible : ' + dbError.message);
+      setSaving(false);
+      return;
     }
+
+    // Aucune ligne modifiée : souvent une politique de sécurité "update" manquante
+    if (!data || data.length === 0) {
+      setError("Aucune modification enregistrée. Vérifiez la politique « update » de la table devices dans Supabase.");
+      setSaving(false);
+      return;
+    }
+
+    await onSaved(); // recharge la liste des appareils
+    setSaving(false);
+    onClose();
+  }
+
+  // Valide la saisie, puis enregistre
+  async function handleSave() {
+    setError('');
+
+    for (const measure of MEASURES) {
+      const moyen = Number(values[measure.moyen]);
+      const critique = Number(values[measure.critique]);
+
+      // Champ vide ou non numérique
+      if (
+        values[measure.moyen] === '' ||
+        values[measure.critique] === '' ||
+        !Number.isFinite(moyen) ||
+        !Number.isFinite(critique)
+      ) {
+        setError(`${measure.name} : renseignez les deux valeurs.`);
+        return;
+      }
+
+      // Le seuil "moyen" doit se déclencher AVANT le seuil "critique"
+      if (moyen >= critique) {
+        setError(`${measure.name} : le seuil moyen doit être inférieur au seuil critique.`);
+        return;
+      }
+    }
+
+    // Si une valeur est identique au seuil par défaut, on enregistre "null" :
+    // l'appareil continue alors de suivre les seuils globaux des Paramètres.
+    // Seules les vraies personnalisations sont stockées.
+    const payload = {};
+    Object.keys(defaultsByColumn).forEach((column) => {
+      const value = Number(values[column]);
+      payload[column] = value === defaultsByColumn[column] ? null : value;
+    });
+
+    await saveToDatabase(payload);
+  }
+
+  // Retire toute personnalisation : l'appareil retombe sur les seuils globaux
+  async function handleReset() {
+    setError('');
+    const payload = {};
+    Object.keys(defaultsByColumn).forEach((column) => {
+      payload[column] = null;
+    });
+    await saveToDatabase(payload);
   }
 
   return (
-    <div className="devices-page">
-      <div className="devices-header">
-        <div>
-          <h1>Appareils</h1>
-          <p className="devices-subtitle">Gérez vos détecteurs installés</p>
+    // Cliquer sur le fond sombre ferme la fenêtre
+    <div className="dtm-backdrop" onClick={onClose}>
+      {/* stopPropagation : un clic DANS la fenêtre ne doit pas la fermer */}
+      <div className="dtm-card" onClick={(e) => e.stopPropagation()}>
+        <div className="dtm-header">
+          <h3>Seuils — {device.name}</h3>
+          <button type="button" className="dtm-close" onClick={onClose}>
+            <X size={18} />
+          </button>
         </div>
-        <button className="add-device-btn" onClick={() => setShowForm(true)}>
-          <Plus size={16} />
-          Ajouter un détecteur
-        </button>
+
+        <p className="dtm-desc">
+          Ces seuils s'appliquent uniquement à cet appareil, indépendamment des autres.
+        </p>
+
+        {/* Un groupe de deux champs (moyen / critique) par mesure */}
+        {MEASURES.map((measure) => (
+          <div className="dtm-group" key={measure.name}>
+            <span className="dtm-label">{measure.label}</span>
+            <div className="dtm-inputs">
+              <label>
+                Moyen
+                <input
+                  type="number"
+                  value={values[measure.moyen]}
+                  onChange={(e) => updateValue(measure.moyen, e.target.value)}
+                />
+              </label>
+              <label>
+                Critique
+                <input
+                  type="number"
+                  value={values[measure.critique]}
+                  onChange={(e) => updateValue(measure.critique, e.target.value)}
+                />
+              </label>
+            </div>
+          </div>
+        ))}
+
+        {/* Message d'erreur éventuel (validation ou erreur Supabase) */}
+        {error && <p className="dtm-error">{error}</p>}
+
+        <div className="dtm-actions">
+          <button type="button" className="dtm-reset" onClick={handleReset} disabled={saving}>
+            <RotateCcw size={14} />
+            Valeurs par défaut
+          </button>
+          <button type="button" className="dtm-save" onClick={handleSave} disabled={saving}>
+            {saving ? 'Enregistrement...' : 'Enregistrer'}
+          </button>
+        </div>
       </div>
-
-      {showForm && (
-        <div className="device-form-backdrop" onClick={() => setShowForm(false)}>
-          <form className="device-form" onClick={(e) => e.stopPropagation()} onSubmit={handleAddDevice}>
-            <div className="device-form-header">
-              <h3>Nouveau détecteur</h3>
-              <button type="button" onClick={() => setShowForm(false)}>
-                <X size={18} />
-              </button>
-            </div>
-            <label>
-              Nom / emplacement
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Ex : Garage, Cuisine..."
-                required
-                autoFocus
-              />
-            </label>
-            <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
-              {isSubmitting ? 'Ajout...' : 'Ajouter'}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Fenêtre d'édition des seuils, affichée seulement si un appareil est en cours d'édition */}
-      {editingDevice && (
-        <DeviceThresholdModal
-          device={editingDevice}
-          onClose={() => setEditingDevice(null)}
-          onSaved={() => window.location.reload()} // simple pour l'instant : recharge pour refléter le changement
-        />
-      )}
-
-      {loading ? (
-        <p className="devices-loading">Chargement...</p>
-      ) : devices.length === 0 ? (
-        <p className="no-devices">Aucun détecteur pour l'instant. Ajoutez-en un pour commencer.</p>
-      ) : (
-        <div className="sensor-grid">
-          {devices.map((device) => (
-            // Conteneur positionné en relatif, pour ancrer le bouton "⋮" en absolu dans son coin
-            <div key={device.id} className="device-card-wrapper">
-              <button
-                className="device-menu-btn"
-                onClick={() => setOpenMenuId(openMenuId === device.id ? null : device.id)}
-              >
-                <MoreVertical size={16} />
-              </button>
-
-              {/* Petit menu déroulant, affiché seulement pour l'appareil actuellement ouvert */}
-              {openMenuId === device.id && (
-                <div className="device-menu-dropdown">
-                  <button
-                    onClick={() => {
-                      setEditingDevice(device);
-                      setOpenMenuId(null);
-                    }}
-                  >
-                    <Sliders size={14} />
-                    Modifier les seuils
-                  </button>
-                </div>
-              )}
-
-              <SensorCard
-                name={device.name}
-                isOnline={device.is_online}
-                temperature={null}
-                smokeLevel={null}
-                gasLevel={null}
-                flameDetected={false}
-              />
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
-export default Devices;
+export default DeviceThresholdModal;
