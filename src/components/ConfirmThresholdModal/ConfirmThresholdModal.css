@@ -1,0 +1,107 @@
+/* Fond sombre plein écran. z-index 300 : au-dessus de la fenêtre des seuils (200) */
+.ctm-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 1rem;
+  animation: fadeIn 0.15s ease-out;
+}
+
+/* Carte centrale, avec une petite animation d'apparition (scaleIn défini dans index.css) */
+.ctm-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Pastille ambre avec le triangle d'avertissement */
+.ctm-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #D97706;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.ctm-card h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+}
+
+.ctm-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-bottom: 1rem;
+}
+
+/* Liens "Consulter le guide" et "Télécharger le PDF", côte à côte */
+.ctm-links {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  font-size: 0.8rem;
+}
+
+.ctm-links a {
+  color: var(--accent);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ctm-links a:hover {
+  text-decoration: underline;
+}
+
+/* Boutons du bas, de même largeur */
+.ctm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ctm-cancel,
+.ctm-confirm {
+  flex: 1;
+  padding: 11px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ctm-cancel {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+/* Bouton de confirmation en couleur "danger" : il signale un risque */
+.ctm-confirm {
+  background-color: var(--danger);
+  border: none;
+  color: white;
+}
+
+.ctm-cancel:hover,
+.ctm-confirm:hover {
+  opacity: 0.9;
+}

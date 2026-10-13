@@ -1,48 +1,51 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sun, Moon, Save, HelpCircle, ChevronRight, BellRing, TestTube2 } from 'lucide-react';
+import {
+  Sun, Moon, HelpCircle, BookOpen, ChevronRight, BellRing, TestTube2, Sliders,
+} from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { sendPushNotification } from '../utils/sendPushNotification';
-import { getThresholds, saveThresholds, generateAlerts } from '../utils/alertRules';
+import { getThresholds, generateAlerts } from '../utils/alertRules';
 import { mockSensors } from '../data/mockSensors';
 import './Settings.css';
 
+// Page Paramètres : apparence, seuils par défaut (lecture seule), notifications, aide
 function Settings() {
   const { theme, toggleTheme } = useTheme();
   const { currentUser } = useAuth();
-  const [thresholds, setThresholds] = useState(getThresholds());
   const [notifEmail, setNotifEmail] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [simulating, setSimulating] = useState(false);
 
+  // Gestion de l'activation des notifications push
   const { subscribe, status: pushStatus, errorMessage: pushError } = usePushNotifications();
+
+  // Seuils par défaut, présentés en lecture seule (un tableau de lignes à afficher)
+  const defaults = getThresholds();
+  const defaultRows = [
+    { label: 'Température', unit: '°C', ...defaults.temperature },
+    { label: 'Fumée', unit: '%', ...defaults.smoke },
+    { label: 'Gaz', unit: '%', ...defaults.gas },
+  ];
 
   function handlePushClick() {
     subscribe();
   }
 
-  // Simule un vrai dépassement de seuil : calcule les alertes à partir des
-  // données de capteurs (factices pour l'instant, réelles plus tard avec le
-  // matériel) selon les seuils actuellement configurés, et envoie une vraie
-  // notification push pour la première alerte détectée. Ça démontre le
-  // fonctionnement réel du système : seuil dépassé → notification envoyée.
+  // Simule un dépassement de seuil : calcule les alertes à partir des données de test,
+  // puis envoie une vraie notification push pour la première alerte détectée
   async function handleSimulateAlert() {
     setSimulating(true);
 
-    // Recalcule les alertes avec les seuils actuels (ceux définis plus haut
-    // dans cette même page, potentiellement modifiés par l'utilisateur)
     const alerts = generateAlerts(mockSensors);
 
     if (alerts.length === 0) {
-      alert("Aucun seuil n'est actuellement dépassé avec les données de test. Essayez d'abaisser un seuil ci-dessus.");
+      alert("Aucun seuil n'est dépassé avec les données de test actuelles.");
       setSimulating(false);
       return;
     }
 
-    // Prend la première alerte détectée, et envoie une vraie notification
-    // avec son contenu réel (type d'anomalie + lieu concerné)
     const firstAlert = alerts[0];
     await sendPushNotification(
       currentUser.id,
@@ -53,24 +56,12 @@ function Settings() {
     setSimulating(false);
   }
 
-  function updateThreshold(category, level, value) {
-    setThresholds((prev) => ({
-      ...prev,
-      [category]: { ...prev[category], [level]: Number(value) },
-    }));
-  }
-
-  function handleSave() {
-    saveThresholds(thresholds);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
-
   return (
     <div className="settings-page fade-in-up">
       <h1>Paramètres</h1>
       <p className="settings-subtitle">Personnalisez le comportement de votre plateforme</p>
 
+      {/* ===== Apparence ===== */}
       <div className="settings-card">
         <h3>Apparence</h3>
         <div className="settings-row">
@@ -82,59 +73,40 @@ function Settings() {
         </div>
       </div>
 
+      {/* ===== Seuils par défaut (lecture seule) ===== */}
       <div className="settings-card">
-        <h3>Seuils d'alerte</h3>
+        <h3>Seuils d'alerte par défaut</h3>
         <p className="settings-card-desc">
-          Définissez à partir de quelles valeurs une alerte moyenne ou critique se déclenche.
+          Ces valeurs s'appliquent à tout détecteur sans réglage personnalisé. Pour adapter un
+          détecteur à sa pièce (cuisine, chambre...), modifiez ses seuils depuis la page Appareils.
         </p>
 
-        <div className="threshold-group">
-          <span className="threshold-label">Température (°C)</span>
-          <div className="threshold-inputs">
-            <label>
-              Moyen
-              <input type="number" value={thresholds.temperature.moyen} onChange={(e) => updateThreshold('temperature', 'moyen', e.target.value)} />
-            </label>
-            <label>
-              Critique
-              <input type="number" value={thresholds.temperature.critique} onChange={(e) => updateThreshold('temperature', 'critique', e.target.value)} />
-            </label>
+        {defaultRows.map((row) => (
+          <div className="default-threshold-row" key={row.label}>
+            <span className="default-threshold-name">{row.label}</span>
+            <div className="default-threshold-values">
+              <span className="threshold-chip threshold-chip-moyen">
+                Moyen : {row.moyen} {row.unit}
+              </span>
+              <span className="threshold-chip threshold-chip-critique">
+                Critique : {row.critique} {row.unit}
+              </span>
+            </div>
           </div>
-        </div>
+        ))}
 
-        <div className="threshold-group">
-          <span className="threshold-label">Fumée (%)</span>
-          <div className="threshold-inputs">
-            <label>
-              Moyen
-              <input type="number" value={thresholds.smoke.moyen} onChange={(e) => updateThreshold('smoke', 'moyen', e.target.value)} />
-            </label>
-            <label>
-              Critique
-              <input type="number" value={thresholds.smoke.critique} onChange={(e) => updateThreshold('smoke', 'critique', e.target.value)} />
-            </label>
-          </div>
-        </div>
-
-        <div className="threshold-group">
-          <span className="threshold-label">Gaz (%)</span>
-          <div className="threshold-inputs">
-            <label>
-              Moyen
-              <input type="number" value={thresholds.gas.moyen} onChange={(e) => updateThreshold('gas', 'moyen', e.target.value)} />
-            </label>
-            <label>
-              Critique
-              <input type="number" value={thresholds.gas.critique} onChange={(e) => updateThreshold('gas', 'critique', e.target.value)} />
-            </label>
-          </div>
-        </div>
+        {/* Redirige vers la modification individuelle, seul endroit où l'on règle un seuil */}
+        <Link to="/devices" className="settings-action-btn">
+          <Sliders size={16} />
+          Gérer les seuils par appareil
+        </Link>
       </div>
 
+      {/* ===== Notifications push ===== */}
       <div className="settings-card">
         <h3>Notifications push</h3>
         <p className="settings-card-desc">
-          Recevez une notification dès qu'un seuil configuré ci-dessus est dépassé.
+          Recevez une notification dès qu'un seuil est dépassé, même lorsque Vela n'est pas ouvert.
         </p>
         <button className="theme-toggle-btn" onClick={handlePushClick} disabled={pushStatus === 'loading'}>
           <BellRing size={16} />
@@ -144,9 +116,6 @@ function Settings() {
           <p className="auth-error" style={{ marginTop: '10px' }}>{pushError}</p>
         )}
 
-        {/* Simulation réaliste : calcule une vraie alerte à partir des seuils
-            configurés ci-dessus, et l'envoie en notification. Utile en attendant
-            que le matériel envoie de vraies données de capteurs. */}
         {pushStatus === 'success' && (
           <button
             className="theme-toggle-btn"
@@ -160,6 +129,7 @@ function Settings() {
         )}
       </div>
 
+      {/* ===== Notifications par email ===== */}
       <div className="settings-card">
         <h3>Notifications par email</h3>
         <div className="settings-row">
@@ -173,8 +143,16 @@ function Settings() {
         </div>
       </div>
 
+      {/* ===== Aide ===== */}
       <div className="settings-card">
         <h3>Aide</h3>
+        <Link to="/guide-seuils?from=settings" className="settings-link-row">
+          <div className="settings-link-left">
+            <BookOpen size={18} />
+            <span>Guide des seuils d'alerte</span>
+          </div>
+          <ChevronRight size={16} />
+        </Link>
         <Link to="/faq?from=settings" className="settings-link-row">
           <div className="settings-link-left">
             <HelpCircle size={18} />
@@ -183,11 +161,6 @@ function Settings() {
           <ChevronRight size={16} />
         </Link>
       </div>
-
-      <button className="auth-submit-btn settings-save-btn" onClick={handleSave}>
-        <Save size={16} />
-        {saved ? 'Enregistré ✓' : 'Enregistrer les modifications'}
-      </button>
     </div>
   );
 }

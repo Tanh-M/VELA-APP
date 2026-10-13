@@ -1,25 +1,20 @@
-// Seuils par défaut (valeurs de travail, à ajuster après calibration du capteur)
+// Seuils par défaut, FIXES : ils s'appliquent à tout détecteur qui n'a pas de réglage
+// personnalisé (valeurs de travail, à ajuster après calibration du capteur physique)
 const DEFAULT_THRESHOLDS = {
   temperature: { moyen: 45, critique: 60 },
   smoke: { moyen: 25, critique: 50 },
   gas: { moyen: 30, critique: 60 },
 };
 
-// Récupère les seuils globaux par défaut (personnalisés ou non, depuis localStorage)
+// Renvoie les seuils par défaut. Ils ne sont plus modifiables depuis les Paramètres :
+// la personnalisation se fait appareil par appareil (page Appareils).
 export function getThresholds() {
-  const saved = localStorage.getItem('velaThresholds');
-  return saved ? JSON.parse(saved) : DEFAULT_THRESHOLDS;
+  return DEFAULT_THRESHOLDS;
 }
 
-export function saveThresholds(thresholds) {
-  localStorage.setItem('velaThresholds', JSON.stringify(thresholds));
-}
-
-// NOUVEAU : construit les seuils EFFECTIFS pour un appareil précis, en combinant
-// ses éventuelles valeurs personnalisées (stockées sur l'appareil lui-même dans
-// Supabase) avec les seuils globaux par défaut, colonne par colonne.
-// Si l'appareil n'a AUCUNE personnalisation, on retombe entièrement sur les
-// seuils par défaut.
+// Construit les seuils EFFECTIFS d'un appareil : ses valeurs personnalisées
+// (colonnes de la table devices) si elles existent, sinon les seuils par défaut,
+// colonne par colonne
 export function getEffectiveThresholds(device) {
   const defaults = getThresholds();
 
@@ -39,16 +34,17 @@ export function getEffectiveThresholds(device) {
   };
 }
 
-// Analyse UN capteur et renvoie ses alertes, en utilisant SES seuils effectifs
-// (personnalisés si définis, sinon les seuils globaux par défaut)
+// Analyse UN capteur et renvoie ses alertes, selon SES seuils effectifs
 export function getAlertsForSensor(sensor) {
   const THRESHOLDS = getEffectiveThresholds(sensor);
   const alerts = [];
 
+  // La flamme est binaire : toujours critique si détectée
   if (sensor.flameDetected) {
     alerts.push({ type: 'Flamme détectée', location: sensor.name, severity: 'critique' });
   }
 
+  // On teste d'abord le seuil critique : une seule alerte par mesure
   if (sensor.temperature >= THRESHOLDS.temperature.critique) {
     alerts.push({ type: 'Température critique', location: sensor.name, severity: 'critique' });
   } else if (sensor.temperature >= THRESHOLDS.temperature.moyen) {
@@ -70,6 +66,7 @@ export function getAlertsForSensor(sensor) {
   return alerts;
 }
 
+// Analyse TOUS les capteurs fournis et renvoie la liste complète des alertes
 export function generateAlerts(sensors) {
   let allAlerts = [];
   let idCounter = 1;

@@ -11,7 +11,7 @@
   margin-bottom: 1.5rem;
 }
 
-/* Chaque section (Apparence, Seuils, Notifications) est une carte séparée */
+/* Chaque section est une carte séparée */
 .settings-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
@@ -35,7 +35,7 @@
   line-height: 1.4;
 }
 
-/* Une ligne de réglage classique : libellé à gauche, contrôle à droite */
+/* Ligne de réglage : libellé à gauche, contrôle à droite */
 .settings-row {
   display: flex;
   align-items: center;
@@ -58,43 +58,73 @@
   cursor: pointer;
 }
 
-/* Groupe de seuils (un par mesure : température, fumée, gaz) */
-.threshold-group {
+.theme-toggle-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== Seuils par défaut (lecture seule) ===== */
+.default-threshold-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
   padding: 10px 0;
   border-top: 1px solid var(--border);
 }
 
-.threshold-label {
-  font-size: 0.85rem;
+.default-threshold-name {
+  font-size: 0.88rem;
   font-weight: 500;
   color: var(--text-primary);
 }
 
-.threshold-inputs {
+.default-threshold-values {
   display: flex;
-  gap: 12px;
-  margin-top: 8px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.threshold-inputs label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* Pastilles de valeur : ambre pour "moyen", rouge-corail pour "critique" */
+.threshold-chip {
   font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-
-.threshold-inputs input {
-  width: 80px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background-color: var(--bg-primary);
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
   color: var(--text-primary);
-  font-size: 0.85rem;
 }
 
-/* Interrupteur on/off personnalisé (remplace une case à cocher classique) */
+.threshold-chip-moyen {
+  background-color: rgba(224, 160, 47, 0.16);
+  border: 1px solid rgba(224, 160, 47, 0.45);
+}
+
+.threshold-chip-critique {
+  background-color: rgba(216, 90, 48, 0.14);
+  border: 1px solid rgba(216, 90, 48, 0.45);
+}
+
+/* Bouton vers la page Appareils (c'est un lien : on retire le soulignement) */
+.settings-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1rem;
+  background-color: var(--accent);
+  color: white;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.settings-action-btn:hover {
+  opacity: 0.9;
+}
+
+/* ===== Interrupteur on/off ===== */
 .switch {
   width: 40px;
   height: 22px;
@@ -118,7 +148,6 @@
   height: 18px;
   border-radius: 50%;
   background-color: white;
-  /* Le point glisse d'un côté à l'autre quand on bascule l'interrupteur */
   transition: transform 0.2s ease;
 }
 
@@ -126,15 +155,7 @@
   transform: translateX(18px);
 }
 
-.settings-save-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: auto;
-  padding: 11px 22px;
-}
-
-/* Ligne de lien vers la FAQ, avec effet de survol discret */
+/* ===== Lignes de liens (section Aide) ===== */
 .settings-link-row {
   display: flex;
   align-items: center;
@@ -143,6 +164,11 @@
   color: var(--text-primary);
   text-decoration: none;
   font-size: 0.88rem;
+}
+
+/* Fine séparation entre deux lignes de liens successives */
+.settings-link-row + .settings-link-row {
+  border-top: 1px solid var(--border);
 }
 
 .settings-link-left {

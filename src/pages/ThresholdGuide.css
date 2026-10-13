@@ -1,0 +1,448 @@
+/* Colonne de lecture centrée */
+.tg-page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding-bottom: 3rem;
+}
+
+/* ===== Barre du haut ===== */
+.tg-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.tg-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: gap 0.15s ease, color 0.15s ease;
+}
+
+/* La flèche s'écarte légèrement du texte au survol */
+.tg-back:hover {
+  color: var(--accent);
+  gap: 10px;
+}
+
+.tg-pdf-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--accent);
+  color: white;
+  text-decoration: none;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tg-pdf-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(24, 95, 165, 0.3);
+}
+
+/* ===== En-tête ===== */
+.tg-hero {
+  text-align: center;
+  padding: 2rem 1rem;
+  margin-bottom: 1.75rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(24, 95, 165, 0.12), transparent 70%),
+    var(--bg-surface);
+  animation: fadeInUp 0.45s ease-out;
+}
+
+.tg-hero-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.tg-hero h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.tg-hero p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* ===== Sections (apparition décalée, délai défini en ligne dans le JSX) ===== */
+.tg-section {
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.5s ease-out backwards;
+}
+
+.tg-section h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+}
+
+.tg-lead {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.tg-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+/* ===== Curseur interactif ===== */
+.tg-slider-title {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  margin-bottom: 0.7rem;
+}
+
+.tg-range {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.tg-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.tg-meters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.1rem;
+}
+
+.tg-meter-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.tg-meter-head strong {
+  color: var(--text-primary);
+}
+
+.tg-meter-track {
+  height: 10px;
+  border-radius: 20px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* La largeur change en douceur quand on déplace le curseur */
+.tg-meter-fill {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.3s ease;
+}
+
+.tg-fill-warn {
+  background-color: #E0A02F;
+}
+
+.tg-fill-danger {
+  background-color: var(--danger);
+}
+
+/* Encadré de verdict : couleur selon la zone */
+.tg-zone {
+  margin-top: 1.1rem;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.tg-zone strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.tg-zone-ok {
+  background-color: rgba(62, 142, 90, 0.14);
+  border: 1px solid rgba(62, 142, 90, 0.4);
+}
+
+.tg-zone-warn {
+  background-color: rgba(224, 160, 47, 0.14);
+  border: 1px solid rgba(224, 160, 47, 0.45);
+}
+
+.tg-zone-danger {
+  background-color: rgba(216, 90, 48, 0.14);
+  border: 1px solid rgba(216, 90, 48, 0.45);
+}
+
+.tg-note {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 0.75rem;
+}
+
+/* ===== Onglets des pièces ===== */
+.tg-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+
+.tg-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.83rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tg-tab:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.tg-tab-active,
+.tg-tab-active:hover {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* Panneau de la pièce : fondu à chaque changement d'onglet */
+.tg-room {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.tg-room-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+}
+
+.tg-room-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tg-sens {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+/* Jauge à 5 segments : sensibilité recommandée */
+.tg-segs {
+  display: flex;
+  gap: 4px;
+}
+
+.tg-seg {
+  width: 18px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: var(--border);
+}
+
+.tg-seg-on {
+  background-color: var(--accent);
+}
+
+.tg-room h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0.8rem 0 0.25rem;
+}
+
+.tg-room p {
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  line-height: 1.55;
+}
+
+/* ===== Erreurs à éviter ===== */
+.tg-mistakes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.tg-mistake {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--danger);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: transform 0.15s ease;
+}
+
+.tg-mistake:hover {
+  transform: translateY(-3px);
+}
+
+.tg-mistake-icon {
+  color: var(--danger);
+  margin-bottom: 0.4rem;
+}
+
+.tg-mistake h3 {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
+}
+
+.tg-mistake p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ===== Checklist ===== */
+.tg-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  padding: 10px 0;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.tg-check:first-child {
+  border-top: none;
+}
+
+.tg-box {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.15s ease;
+}
+
+.tg-box-on {
+  background-color: var(--success);
+  border-color: var(--success);
+}
+
+.tg-progress {
+  margin-top: 1rem;
+}
+
+.tg-progress-track {
+  height: 8px;
+  border-radius: 20px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.tg-progress-fill {
+  height: 100%;
+  background-color: var(--success);
+  transition: width 0.3s ease;
+}
+
+.tg-progress-text {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+/* ===== Sources ===== */
+.tg-sources ul {
+  padding-left: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.tg-sources li {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.tg-sources p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .tg-meters,
+  .tg-mistakes {
+    grid-template-columns: 1fr;
+  }
+
+  .tg-hero h1 {
+    font-size: 1.3rem;
+  }
+}

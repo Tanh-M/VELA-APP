@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, X, MoreVertical, Sliders, Trash2 } from 'lucide-react';
 import SensorCard from '../components/SensorCard/SensorCard';
 import DeviceThresholdModal from '../components/DeviceThresholdModal/DeviceThresholdModal';
 import { useDevices } from '../hooks/useDevices';
 import './Devices.css';
 
-// Indique si un appareil a au moins un seuil personnalisé
-// (colonne différente de null) — sert à afficher l'étiquette "Seuils personnalisés"
+// Indique si un appareil a au moins un seuil personnalisé (colonne différente de null)
+// — sert à afficher l'étiquette "Seuils personnalisés"
 function hasCustomThresholds(device) {
   return [
     device.temp_moyen, device.temp_critique,
@@ -28,6 +29,24 @@ function Devices() {
 
   // Appareil dont on modifie actuellement les seuils (null = aucun)
   const [editingDevice, setEditingDevice] = useState(null);
+
+  // Paramètres de l'adresse : "?edit=<id>" demande de rouvrir la fenêtre des seuils
+  // d'un appareil (utilisé au retour du guide des seuils)
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Rouvre automatiquement la fenêtre des seuils de l'appareil demandé par "?edit="
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+
+    // Rien à faire sans paramètre, ou tant que la liste des appareils n'est pas chargée
+    if (!editId || devices.length === 0) return;
+
+    const target = devices.find((device) => device.id === editId);
+    if (target) setEditingDevice(target);
+
+    // On retire le paramètre de l'adresse : la fenêtre ne se rouvrira pas à chaque rechargement
+    setSearchParams({}, { replace: true });
+  }, [searchParams, devices]);
 
   // Ajoute un nouveau détecteur
   async function handleAddDevice(e) {
