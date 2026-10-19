@@ -9,7 +9,7 @@ import ResetPassword from '../pages/ResetPassword';
 import EmailConfirmed from '../pages/EmailConfirmed';
 import FAQ from '../pages/FAQ';
 import Dashboard from '../pages/Dashboard';
-import Devices from '../Pages/Devices';
+import Devices from '../pages/Devices';
 import Alerts from '../pages/Alerts';
 import Profile from '../pages/Profile';
 import Settings from '../pages/Settings';
