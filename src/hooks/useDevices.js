@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../Services/supabase';
+import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 
 // Hook personnalisé : gère les appareils (détecteurs) de l'utilisateur connecté

@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../Services/supabase';
+import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 
 export function useSensor(deviceId) {
