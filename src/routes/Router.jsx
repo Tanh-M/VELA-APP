@@ -9,11 +9,15 @@ import ResetPassword from '../pages/ResetPassword';
 import EmailConfirmed from '../pages/EmailConfirmed';
 import FAQ from '../pages/FAQ';
 import Dashboard from '../pages/Dashboard';
-import Devices from '../pages/Devices';
+import Devices from '../Pages/Devices';
 import Alerts from '../pages/Alerts';
 import Profile from '../pages/Profile';
 import Settings from '../pages/Settings';
 import ThresholdGuide from '../pages/ThresholdGuide';
+// Page d'historique d'un appareil
+import DeviceHistory from '../pages/DeviceHistory';
+// AJOUT : page de détail d'un appareil (graphe 24h)
+import DeviceDetail from '../pages/DeviceDetail';
 
 // Réserve une page aux utilisateurs connectés.
 // "loading" : tant que Supabase vérifie la session (rechargement, nouvel onglet),
@@ -47,6 +51,10 @@ function Router() {
 
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/devices" element={<PrivateRoute><Devices /></PrivateRoute>} />
+      {/* AJOUT : détail d'un appareil (:deviceId = l'id de l'appareil cliqué) */}
+      <Route path="/devices/:deviceId" element={<PrivateRoute><DeviceDetail /></PrivateRoute>} />
+      {/* Historique d'un appareil */}
+      <Route path="/devices/:deviceId/history" element={<PrivateRoute><DeviceHistory /></PrivateRoute>} />
       <Route path="/alerts" element={<PrivateRoute><Alerts /></PrivateRoute>} />
       <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="/parametres" element={<PrivateRoute><Settings /></PrivateRoute>} />

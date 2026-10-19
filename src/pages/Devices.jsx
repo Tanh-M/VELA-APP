@@ -1,59 +1,89 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Plus, X, MoreVertical, Sliders, Trash2 } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Plus, X, MoreVertical, Sliders, Trash2, History } from 'lucide-react';
 import SensorCard from '../components/SensorCard/SensorCard';
 import DeviceThresholdModal from '../components/DeviceThresholdModal/DeviceThresholdModal';
 import { useDevices } from '../hooks/useDevices';
+import { useSensor } from '../hooks/useSensors';
 import './Devices.css';
 
-// Indique si un appareil a au moins un seuil personnalisé (colonne différente de null)
-// — sert à afficher l'étiquette "Seuils personnalisés"
+// Indique si un appareil possède au moins un seuil personnalisé
 function hasCustomThresholds(device) {
   return [
-    device.temp_moyen, device.temp_critique,
-    device.smoke_moyen, device.smoke_critique,
-    device.gas_moyen, device.gas_critique,
+    device.temp_moyen,
+    device.temp_critique,
+    device.smoke_moyen,
+    device.smoke_critique,
+    device.gas_moyen,
+    device.gas_critique,
   ].some((value) => value !== null && value !== undefined);
 }
 
-function Devices() {
-  const { devices, loading, addDevice, deleteDevice, refreshDevices } = useDevices();
+// Récupère et affiche les dernières mesures d'un appareil
+function DeviceSensorCard({ device }) {
+  const { reading, error } = useSensor(device.id);
 
-  // Formulaire d'ajout d'un détecteur
+  return (
+    <>
+      <SensorCard
+        name={device.name}
+        isOnline={device.is_online}
+        temperature={reading?.temperature ?? null}
+        smokeLevel={reading?.smoke_level ?? null}
+        gasLevel={reading?.gas_level ?? null}
+        flameDetected={reading?.flame_detected ?? false}
+      />
+
+      {error && (
+        <p role="alert">
+          Impossible de charger les mesures : {error}
+        </p>
+      )}
+    </>
+  );
+}
+
+function Devices() {
+  const {
+    devices,
+    loading,
+    addDevice,
+    deleteDevice,
+    refreshDevices,
+  } = useDevices();
+
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Id de l'appareil dont le menu "⋮" est ouvert (null = aucun)
   const [openMenuId, setOpenMenuId] = useState(null);
-
-  // Appareil dont on modifie actuellement les seuils (null = aucun)
   const [editingDevice, setEditingDevice] = useState(null);
 
-  // Paramètres de l'adresse : "?edit=<id>" demande de rouvrir la fenêtre des seuils
-  // d'un appareil (utilisé au retour du guide des seuils)
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Rouvre automatiquement la fenêtre des seuils de l'appareil demandé par "?edit="
+  // Outil de navigation vers d'autres pages (détail, historique)
+  const navigate = useNavigate();
+
+  // Ouvre la fenêtre des seuils si l'URL contient ?edit=<id>
   useEffect(() => {
     const editId = searchParams.get('edit');
 
-    // Rien à faire sans paramètre, ou tant que la liste des appareils n'est pas chargée
     if (!editId || devices.length === 0) return;
 
     const target = devices.find((device) => device.id === editId);
+
     if (target) setEditingDevice(target);
 
-    // On retire le paramètre de l'adresse : la fenêtre ne se rouvrira pas à chaque rechargement
     setSearchParams({}, { replace: true });
-  }, [searchParams, devices]);
+  }, [searchParams, devices, setSearchParams]);
 
-  // Ajoute un nouveau détecteur
+  // Ajoute un détecteur
   async function handleAddDevice(e) {
     e.preventDefault();
+
     if (!newName.trim()) return;
 
     setIsSubmitting(true);
+
     try {
       await addDevice(newName.trim());
       setNewName('');
@@ -65,13 +95,14 @@ function Devices() {
     }
   }
 
-  // Supprime un détecteur, après confirmation (action irréversible)
+  // Supprime un détecteur après confirmation
   async function handleDeleteDevice(device) {
     setOpenMenuId(null);
 
     const confirmed = window.confirm(
       `Supprimer le détecteur « ${device.name} » ? Toutes ses mesures seront aussi supprimées. Cette action est irréversible.`
     );
+
     if (!confirmed) return;
 
     try {
@@ -86,9 +117,15 @@ function Devices() {
       <div className="devices-header">
         <div>
           <h1>Appareils</h1>
-          <p className="devices-subtitle">Gérez vos détecteurs installés</p>
+          <p className="devices-subtitle">
+            Gérez vos détecteurs installés
+          </p>
         </div>
-        <button className="add-device-btn" onClick={() => setShowForm(true)}>
+
+        <button
+          className="add-device-btn"
+          onClick={() => setShowForm(true)}
+        >
           <Plus size={16} />
           Ajouter un détecteur
         </button>
@@ -96,14 +133,26 @@ function Devices() {
 
       {/* Fenêtre d'ajout d'un détecteur */}
       {showForm && (
-        <div className="device-form-backdrop" onClick={() => setShowForm(false)}>
-          <form className="device-form" onClick={(e) => e.stopPropagation()} onSubmit={handleAddDevice}>
+        <div
+          className="device-form-backdrop"
+          onClick={() => setShowForm(false)}
+        >
+          <form
+            className="device-form"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleAddDevice}
+          >
             <div className="device-form-header">
               <h3>Nouveau détecteur</h3>
-              <button type="button" onClick={() => setShowForm(false)}>
+
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+              >
                 <X size={18} />
               </button>
             </div>
+
             <label>
               Nom / emplacement
               <input
@@ -115,14 +164,19 @@ function Devices() {
                 autoFocus
               />
             </label>
-            <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+
+            <button
+              type="submit"
+              className="auth-submit-btn"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? 'Ajout...' : 'Ajouter'}
             </button>
           </form>
         </div>
       )}
 
-      {/* Fenêtre de modification des seuils, affichée seulement si un appareil est en cours d'édition */}
+      {/* Fenêtre de modification des seuils */}
       {editingDevice && (
         <DeviceThresholdModal
           device={editingDevice}
@@ -131,30 +185,54 @@ function Devices() {
         />
       )}
 
-      {/* Voile invisible : un clic n'importe où en dehors du menu "⋮" le referme */}
+      {/* Ferme le menu si l'utilisateur clique ailleurs */}
       {openMenuId && (
-        <div className="device-menu-overlay" onClick={() => setOpenMenuId(null)} />
+        <div
+          className="device-menu-overlay"
+          onClick={() => setOpenMenuId(null)}
+        />
       )}
 
       {loading ? (
         <p className="devices-loading">Chargement...</p>
       ) : devices.length === 0 ? (
-        <p className="no-devices">Aucun détecteur pour l'instant. Ajoutez-en un pour commencer.</p>
+        <p className="no-devices">
+          Aucun détecteur pour l'instant. Ajoutez-en un pour commencer.
+        </p>
       ) : (
         <div className="sensor-grid">
           {devices.map((device) => (
-            // Conteneur en position relative : ancre le bouton "⋮" dans le coin de SA fiche
-            <div key={device.id} className="device-card-wrapper">
+            // Un clic sur la carte ouvre la page de détail (graphe 24h)
+            <div
+              key={device.id}
+              className="device-card-wrapper"
+              onClick={() => navigate(`/devices/${device.id}`)}
+            >
               <button
                 className="device-menu-btn"
-                onClick={() => setOpenMenuId(openMenuId === device.id ? null : device.id)}
+                onClick={(e) => {
+                  // Le clic sur ⋮ ne doit pas ouvrir la page de détail
+                  e.stopPropagation();
+                  setOpenMenuId(openMenuId === device.id ? null : device.id);
+                }}
               >
                 <MoreVertical size={16} />
               </button>
 
-              {/* Menu déroulant, affiché seulement pour l'appareil dont le menu est ouvert */}
+              {/* Menu de gestion de l'appareil */}
               {openMenuId === device.id && (
-                <div className="device-menu-dropdown">
+                // Un clic dans le menu ne doit pas non plus ouvrir la page de détail
+                <div className="device-menu-dropdown" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      navigate(`/devices/${device.id}/history`);
+                    }}
+                  >
+                    <History size={14} />
+                    Consulter l'historique
+                  </button>
+
                   <button
                     onClick={() => {
                       setEditingDevice(device);
@@ -164,23 +242,21 @@ function Devices() {
                     <Sliders size={14} />
                     Modifier les seuils
                   </button>
-                  <button className="device-menu-danger" onClick={() => handleDeleteDevice(device)}>
+
+                  <button
+                    className="device-menu-danger"
+                    onClick={() => handleDeleteDevice(device)}
+                  >
                     <Trash2 size={14} />
                     Supprimer l'appareil
                   </button>
                 </div>
               )}
 
-              <SensorCard
-                name={device.name}
-                isOnline={device.is_online}
-                temperature={null}
-                smokeLevel={null}
-                gasLevel={null}
-                flameDetected={false}
-              />
+              {/* Carte et dernières mesures du capteur */}
+              <DeviceSensorCard device={device} />
 
-              {/* Étiquette visible uniquement si l'appareil a des seuils personnalisés */}
+              {/* Indique si l'appareil possède des seuils personnalisés */}
               {hasCustomThresholds(device) && (
                 <p className="device-custom-tag">
                   <Sliders size={12} />

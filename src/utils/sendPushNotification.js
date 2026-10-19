@@ -1,4 +1,4 @@
-import { supabase } from '../services/supabase';
+import { supabase } from '../Services/supabase';
 
 // Envoie une notification push à UN utilisateur précis, en appelant
 // la fonction Edge "send-push-notification" déployée sur Supabase.

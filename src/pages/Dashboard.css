@@ -16,6 +16,13 @@
   gap: 1rem;
 }
 
+/* Carte cliquable : le lien enveloppe la fiche sans changer son apparence */
+.dashboard-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
 .dashboard-loading {
   color: var(--text-secondary);
   font-size: 0.9rem;
@@ -57,6 +64,78 @@
 .status-banner-sub {
   font-size: 0.78rem;
   opacity: 0.85;
+}
+
+/* ===== Bloc "Derniers événements" de tous les appareils ===== */
+.recent-events-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 1rem;
+}
+
+.recent-events-card h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.recent-event-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  text-decoration: none;
+  border-top: 1px solid var(--border);
+}
+
+.recent-event-row:hover .recent-event-name {
+  color: var(--accent);
+}
+
+.recent-event-name {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.recent-event-date {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Pastilles de niveau : vert / ambre / rouge */
+.recent-event-level {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.recent-event-level-normal {
+  background-color: rgba(76, 160, 70, 0.15);
+  border: 1px solid rgba(76, 160, 70, 0.45);
+}
+
+.recent-event-level-moyen {
+  background-color: rgba(224, 160, 47, 0.16);
+  border: 1px solid rgba(224, 160, 47, 0.45);
+}
+
+.recent-event-level-critique {
+  background-color: rgba(216, 90, 48, 0.14);
+  border: 1px solid rgba(216, 90, 48, 0.45);
+}
+
+.recent-events-note {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 8px;
 }
 
 /* Carte "Prochaines étapes", sous la grille de capteurs */

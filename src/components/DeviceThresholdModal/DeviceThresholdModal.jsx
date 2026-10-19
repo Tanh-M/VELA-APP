@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, RotateCcw } from 'lucide-react';
-import { supabase } from '../../services/supabase';
+import { supabase } from '../../Services/supabase';
 import { getThresholds } from '../../utils/alertRules';
 import GuideNotice from '../GuideNotice/GuideNotice';
 import ConfirmThresholdModal from '../ConfirmThresholdModal/ConfirmThresholdModal';

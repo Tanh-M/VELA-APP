@@ -110,9 +110,11 @@
 
 /* ===== Menu "⋮" de chaque fiche ===== */
 /* position: relative est INDISPENSABLE : il ancre le bouton "⋮" (position: absolute)
-   dans le coin de SA fiche, et non dans le coin de la page */
+   dans le coin de SA fiche, et non dans le coin de la page.
+   cursor: pointer indique que la carte est cliquable (ouvre le détail). */
 .device-card-wrapper {
   position: relative;
+  cursor: pointer;
 }
 
 /* Laisse la place au "⋮" à droite de l'en-tête, pour qu'il ne chevauche
