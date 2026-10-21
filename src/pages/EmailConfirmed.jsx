@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
-import logo from '../assets/icons/logo-sentinel.svg';
+import logo from '../assets/icons/logo-vela.svg';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 import './EmailConfirmed.css';

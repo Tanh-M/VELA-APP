@@ -1,10 +1,12 @@
 // Composant racine : assemble les Providers (thème, authentification) et la mise en page
-import { useState } from 'react';
-import { BrowserRouter, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { BrowserRouter, useLocation, useNavigate } from 'react-router-dom';
 import Router from './routes/Router';
 import Sidebar from './components/Sidebar/Sidebar';
 import Navbar from './components/Navbar/Navbar';
-import { AuthProvider } from './context/AuthContext';
+import SplashScreen from './components/SplashScreen/SplashScreen';
+// AJOUT 1 : useAuth, pour savoir si l'utilisateur est déjà connecté
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
 
@@ -26,6 +28,24 @@ function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const isPublicPage = PUBLIC_ROUTES.includes(location.pathname);
+
+  // AJOUT 2 : à l'OUVERTURE de l'application, un utilisateur déjà connecté arrive
+  // directement sur son tableau de bord (comme la liste des discussions sur WhatsApp).
+  // Cela ne se produit qu'une seule fois : ensuite, le lien "Accueil" du menu
+  // continue de mener à la page d'accueil normalement.
+  const { isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
+  const startupRedirectDone = useRef(false);
+
+  useEffect(() => {
+    // On attend que Supabase ait fini de vérifier la session
+    if (loading || startupRedirectDone.current) return;
+    startupRedirectDone.current = true;
+
+    if (isAuthenticated && location.pathname === '/') {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [loading, isAuthenticated, location.pathname, navigate]);
 
   function toggleSidebar() {
     setIsSidebarOpen((prev) => !prev);
@@ -61,6 +81,9 @@ function AppLayout() {
 function App() {
   return (
     <ThemeProvider>
+      {/* Écran de démarrage : s'affiche à chaque ouverture, par-dessus toute l'application */}
+      <SplashScreen />
+
       <AuthProvider>
         <BrowserRouter>
           <AppLayout />

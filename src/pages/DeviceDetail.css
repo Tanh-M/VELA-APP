@@ -77,6 +77,17 @@
   padding: 3rem 0;
 }
 
+/* Message à la place du graphe (chargement, erreur, aucune mesure) */
+.detail-no-data {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
   .detail-header {

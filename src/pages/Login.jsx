@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import logo from '../assets/icons/logo-sentinel.svg';
+import logo from '../assets/icons/logo-vela.svg';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
@@ -44,8 +44,8 @@ function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo">
-          <img src={logo} alt="Sentinel" className="logo-icon" />
-          <span>Sentinel</span>
+          <img src={logo} alt="VELA" className="logo-icon" />
+          <span>VELA</span>
         </div>
 
         <h2>Connexion</h2>

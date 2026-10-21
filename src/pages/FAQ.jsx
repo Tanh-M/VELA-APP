@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ChevronDown, ArrowLeft, UserPlus, Cpu, Activity, Send } from 'lucide-react';
 import { supabase } from '../services/supabase';
-import logo from '../assets/icons/logo-sentinel.svg';
+import logo from '../assets/icons/logo-vela.svg';
 import './FAQ.css';
 
 function FAQ() {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import logo from '../assets/icons/logo-sentinel.svg';
+import logo from '../assets/icons/logo-vela.svg';
 import { supabase } from '../services/supabase';
 import './Login.css';
 
@@ -39,8 +39,8 @@ function ResetPassword() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-logo">
-          <img src={logo} alt="Sentinel" className="logo-icon" />
-          <span>Sentinel</span>
+          <img src={logo} alt="VELA" className="logo-icon" />
+          <span>VELA</span>
         </div>
 
         <h2>Nouveau mot de passe</h2>

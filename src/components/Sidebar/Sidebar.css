@@ -17,10 +17,11 @@
   padding: 0 0.5rem;
 }
 
+/* CHANGEMENT : logo un peu plus grand (32 px) et sans coins arrondis,
+   car le bouclier a sa propre forme */
 .logo-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
 }
 

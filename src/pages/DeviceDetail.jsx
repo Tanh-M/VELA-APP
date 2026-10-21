@@ -1,11 +1,10 @@
-import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, History } from 'lucide-react';
 import SensorCard from '../components/SensorCard/SensorCard';
 import Chart from '../components/Chart/Chart';
 import { useDevices } from '../hooks/useDevices';
 import { useSensor } from '../hooks/useSensors';
-import { getMockReadings } from '../data/mockReadings';
+import { useReadings24h } from '../hooks/useReadings';
 import './DeviceDetail.css';
 
 function DeviceDetail() {
@@ -18,9 +17,8 @@ function DeviceDetail() {
   // ===== 2. Dernière mesure réelle de cet appareil (Supabase) =====
   const { reading } = useSensor(deviceId);
 
-  // ===== 3. Données du graphe =====
-  // TEMPORAIRE : fausses mesures. Plus tard : lecture de sensor_readings (dernières 24h).
-  const chartData = useMemo(() => getMockReadings(), []);
+  // ===== 3. Mesures des 24 dernières heures (Supabase), pour le graphe =====
+  const { data: chartData, loading: chartLoading, error: chartError } = useReadings24h(deviceId);
 
   // ===== 4. Cas particuliers : chargement / appareil introuvable =====
   if (loading) return <p className="detail-loading">Chargement...</p>;
@@ -72,10 +70,21 @@ function DeviceDetail() {
       </div>
 
       {/* ===== Graphe des 24 dernières heures de CET appareil ===== */}
-      <Chart data={chartData} />
-      <p className="detail-demo-note">
-        Graphe en données de démonstration, en attendant les mesures du système embarqué.
-      </p>
+      {chartError ? (
+        <p role="alert" className="detail-no-data">
+          Impossible de charger le graphe : {chartError}
+        </p>
+      ) : chartLoading ? (
+        <p className="detail-no-data">Chargement du graphe...</p>
+      ) : chartData.length === 0 ? (
+        // Aucun relevé sur 24h : message à la place du graphe vide
+        <p className="detail-no-data">
+          Aucune mesure sur les dernières 24 heures. Le graphe apparaîtra dès que le
+          système embarqué enverra des données.
+        </p>
+      ) : (
+        <Chart data={chartData} />
+      )}
     </div>
   );
 }
