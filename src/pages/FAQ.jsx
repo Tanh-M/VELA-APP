@@ -1,15 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ChevronDown, ArrowLeft, UserPlus, Cpu, Activity, Send } from 'lucide-react';
+import { ChevronDown, ArrowLeft, UserPlus, Cpu, Activity, Send, HelpCircle, Clock } from 'lucide-react';
 import { supabase } from '../services/supabase';
+// AJOUT 1 : pour savoir si l'utilisateur est connecté (la FAQ est une page publique)
+import { useAuth } from '../context/AuthContext';
 import logo from '../assets/icons/logo-vela.svg';
 import './FAQ.css';
+
+// Date au format français : "21/10/2026"
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('fr-FR');
+}
 
 function FAQ() {
   // useSearchParams lit les paramètres présents dans l'URL (ex: ?from=settings)
   // Contrairement à location.state, ça survit à un rechargement complet de la page
   const [searchParams] = useSearchParams();
   const cameFromSettings = searchParams.get('from') === 'settings';
+
+  const { currentUser } = useAuth();
 
   const backTo = cameFromSettings ? '/parametres' : '/';
   const backLabel = cameFromSettings ? 'Retour aux paramètres' : "Retour à l'accueil";
@@ -38,25 +47,79 @@ function FAQ() {
     setOpenFaq(openFaq === index ? null : index);
   }
 
+  // ===== AJOUT 2 : "Mes questions" (en haut de la page) =====
+  // Les 5 dernières questions posées par l'utilisateur connecté, avec leur réponse
+  const [myQuestions, setMyQuestions] = useState([]);
+
+  const fetchMyQuestions = useCallback(async () => {
+    if (!currentUser) {
+      setMyQuestions([]);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('faq_suggestions')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (!error && data) setMyQuestions(data);
+  }, [currentUser]);
+
+  // Charge les questions à l'ouverture de la page (et quand l'utilisateur change)
+  useEffect(() => {
+    fetchMyQuestions();
+  }, [fetchMyQuestions]);
+
+  // Une réponse est "nouvelle" tant que l'utilisateur ne l'a pas vue (seen_at vide)
+  const hasNewAnswer = myQuestions.some((q) => q.answer && !q.seen_at);
+
+  // Après 5 secondes sur la page, on marque les réponses comme lues dans Supabase.
+  // Elles restent soulignées en rouge pendant cette visite, mais ne le seront plus la prochaine fois.
+  useEffect(() => {
+    if (!hasNewAnswer) return;
+    const timer = setTimeout(() => {
+      supabase.rpc('mark_faq_answers_seen');
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [hasNewAnswer]);
+
+  // ===== Envoi d'une nouvelle question =====
   const [suggestion, setSuggestion] = useState('');
   const [suggestionSent, setSuggestionSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
 
-  // Envoie réellement la suggestion dans Supabase, liée à l'utilisateur connecté
   async function handleSuggestionSubmit(e) {
     e.preventDefault();
-    if (!suggestion.trim()) return;
+    if (!suggestion.trim() || !currentUser) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    setSending(true);
+    setSendError('');
 
-    await supabase.from('faq_suggestions').insert({
-      user_id: user.id,
+    const { error } = await supabase.from('faq_suggestions').insert({
+      user_id: currentUser.id,
       question: suggestion.trim(),
     });
 
-    setSuggestionSent(true);
+    setSending(false);
+
+    // Erreur : on l'affiche au lieu de rester silencieux
+    // (le message "Limite ..." vient de la règle des 5 questions par jour dans Supabase)
+    if (error) {
+      setSendError(
+        error.message && error.message.includes('Limite')
+          ? error.message
+          : "L'envoi a échoué. Réessayez dans un instant."
+      );
+      return;
+    }
+
     setSuggestion('');
-    setTimeout(() => setSuggestionSent(false), 3000);
+    setSuggestionSent(true);
+    fetchMyQuestions(); // la nouvelle question apparaît tout de suite en haut, "en attente"
+    setTimeout(() => setSuggestionSent(false), 6000);
   }
 
   return (
@@ -73,6 +136,42 @@ function FAQ() {
       </header>
 
       <div className="faq-content">
+        {/* ===== AJOUT 3 : bloc "Mes questions", tout en haut de la page ===== */}
+        {currentUser && myQuestions.length > 0 && (
+          <section className="my-questions">
+            <h2 className="my-questions-title">
+              <HelpCircle size={18} />
+              Mes questions
+            </h2>
+
+            {myQuestions.map((q, index) => {
+              const answered = Boolean(q.answer);
+              const isNew = answered && !q.seen_at; // réponse pas encore vue
+
+              return (
+                <article key={q.id ?? index} className={`my-question ${isNew ? 'my-question-new' : ''}`}>
+                  <div className="my-question-head">
+                    {/* Question soulignée en rouge quand la réponse est nouvelle */}
+                    <p className={`my-question-text ${isNew ? 'my-question-text-new' : ''}`}>{q.question}</p>
+                    {isNew && <span className="my-question-badge">Nouvelle réponse</span>}
+                  </div>
+
+                  {answered ? (
+                    <p className="my-question-answer">{q.answer}</p>
+                  ) : (
+                    <p className="my-question-pending">
+                      <Clock size={14} />
+                      En attente de réponse...
+                    </p>
+                  )}
+
+                  <p className="my-question-date">Posée le {formatDate(q.created_at)}</p>
+                </article>
+              );
+            })}
+          </section>
+        )}
+
         <h1 className="faq-title-animated">Comment fonctionne Vela</h1>
         <p className="faq-page-subtitle faq-subtitle-animated">Trois étapes simples pour protéger votre maison</p>
 
@@ -111,10 +210,18 @@ function FAQ() {
 
         <div className="faq-suggest-card faq-suggest-animated">
           <h3>Vous ne trouvez pas votre réponse ?</h3>
-          <p>Proposez votre question, nous y répondrons ici prochainement.</p>
+          <p>
+            Posez votre question : la réponse apparaîtra en haut de cette page, et vous serez
+            prévenu par notification si vous les avez activées dans les Paramètres.
+          </p>
 
-          {suggestionSent ? (
-            <p className="faq-suggest-success">Merci, votre question a bien été envoyée !</p>
+          {!currentUser ? (
+            // Visiteur non connecté : on lui demande de se connecter (avant, l'envoi échouait en silence)
+            <p className="faq-suggest-login">
+              <Link to="/login">Connectez-vous</Link> pour poser une question.
+            </p>
+          ) : suggestionSent ? (
+            <p className="faq-suggest-success">Question bien envoyée ! Nous vous répondrons très bientôt.</p>
           ) : (
             <form className="faq-suggest-form" onSubmit={handleSuggestionSubmit}>
               <textarea
@@ -122,11 +229,13 @@ function FAQ() {
                 onChange={(e) => setSuggestion(e.target.value)}
                 placeholder="Écrivez votre question ici..."
                 rows={3}
+                maxLength={500}
                 required
               />
-              <button type="submit" className="auth-submit-btn faq-suggest-btn">
+              {sendError && <p className="faq-suggest-error">{sendError}</p>}
+              <button type="submit" className="auth-submit-btn faq-suggest-btn" disabled={sending}>
                 <Send size={15} />
-                Envoyer
+                {sending ? 'Envoi...' : 'Envoyer'}
               </button>
             </form>
           )}

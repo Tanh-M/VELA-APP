@@ -18,6 +18,17 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+// AJOUT 1 : détecte un iPhone / iPad (les iPad récents se présentent comme des Mac tactiles)
+function isIOSDevice() {
+  const ua = navigator.userAgent || '';
+  return /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+// AJOUT 2 : vrai si Vela est ouvert comme une application (depuis l'icône de l'écran d'accueil)
+function isInstalledApp() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
 // Hook qui expose une fonction "subscribe" à appeler UNIQUEMENT au clic d'un bouton.
 // Les navigateurs modernes bloquent souvent silencieusement la popup de permission
 // si elle n'est pas déclenchée par un vrai geste de l'utilisateur (clic, appui),
@@ -32,6 +43,17 @@ export function usePushNotifications() {
   async function subscribe() {
     if (!currentUser) {
       setErrorMessage('Vous devez être connecté.');
+      setStatus('error');
+      return;
+    }
+
+    // AJOUT 3 : sur iPhone / iPad, les notifications push ne fonctionnent QUE si Vela
+    // est installé sur l'écran d'accueil (pas dans un onglet Safari classique)
+    if (isIOSDevice() && !isInstalledApp()) {
+      setErrorMessage(
+        "Sur iPhone, ajoutez d'abord Vela à l'écran d'accueil : touchez le bouton Partager de Safari, " +
+        "puis « Sur l'écran d'accueil ». Ouvrez ensuite Vela depuis sa nouvelle icône et réactivez les notifications."
+      );
       setStatus('error');
       return;
     }

@@ -288,3 +288,116 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   AJOUT : bloc "Mes questions" en haut de la page
+   (questions posées par l'utilisateur et leurs réponses)
+   ============================================================ */
+.my-questions {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  margin-bottom: 2.5rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.my-questions-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.my-question {
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--border);
+}
+
+/* Réponse nouvelle : bordure rouge à gauche pour attirer l'oeil */
+.my-question-new {
+  border-left: 3px solid var(--danger);
+  padding-left: 0.85rem;
+}
+
+.my-question-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.my-question-text {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+/* Question soulignée en rouge tant que la réponse n'a pas été vue */
+.my-question-text-new {
+  text-decoration: underline;
+  text-decoration-color: var(--danger);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.my-question-badge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  color: var(--danger);
+  background-color: rgba(216, 90, 48, 0.14);
+  border: 1px solid rgba(216, 90, 48, 0.45);
+  white-space: nowrap;
+}
+
+.my-question-answer {
+  margin-top: 0.5rem;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  line-height: 1.55;
+  white-space: pre-line; /* respecte les retours à la ligne de la réponse */
+}
+
+.my-question-pending {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.my-question-date {
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+/* Messages du formulaire d'envoi */
+.faq-suggest-error {
+  font-size: 0.82rem;
+  color: var(--danger);
+}
+
+.faq-suggest-login {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 0;
+}
+
+.faq-suggest-login a {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.faq-suggest-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
