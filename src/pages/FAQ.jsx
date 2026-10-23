@@ -7,6 +7,11 @@ import { useAuth } from '../context/AuthContext';
 import logo from '../assets/icons/logo-vela.svg';
 import './FAQ.css';
 
+// ===== Réglages de l'affichage de "Mes questions" =====
+const MAX_STORED_QUESTIONS = 30; // nombre de questions chargées
+const FOLD_ABOVE = 3; // au-delà de 3 questions, les plus anciennes sont repliées
+const ALWAYS_VISIBLE = 2; // nombre de questions récentes toujours visibles
+
 // Date au format français : "21/10/2026"
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('fr-FR');
@@ -37,7 +42,7 @@ function FAQ() {
     { question: "Est-ce que mes données sont visibles par d'autres utilisateurs ?", answer: "Non, chaque compte est totalement indépendant. Vous ne voyez que vos propres détecteurs et vos propres données." },
     { question: "Combien coûte l'utilisation de Vela ?", answer: "Vela est un projet académique développé dans le cadre d'un mémoire de fin d'études, non commercialisé pour le moment." },
     { question: "Que faire si j'oublie mon mot de passe ?", answer: "Utilisez le lien \"Mot de passe oublié ?\" sur la page de connexion pour recevoir un email de réinitialisation." },
-    { question: "Puis-je modifier les seuils qui déclenchent une alerte ?", answer: "Oui, rendez-vous dans la page Paramètres, section \"Seuils d'alerte\", pour personnaliser chaque valeur." },
+    { question: "Puis-je modifier les seuils qui déclenchent une alerte ?", answer: "Oui. Rendez-vous dans la page Appareils, ouvrez le menu ⋮ du détecteur concerné et choisissez \"Modifier les seuils\". Chaque détecteur peut avoir ses propres seuils. Les valeurs par défaut sont visibles dans la page Paramètres." },
     { question: "Que faire si un détecteur reste \"hors ligne\" longtemps ?", answer: "Vérifiez l'alimentation et la connexion réseau du détecteur concerné. S'il reste hors ligne, un problème matériel est probable." },
   ];
 
@@ -50,6 +55,8 @@ function FAQ() {
   // ===== AJOUT 2 : "Mes questions" (en haut de la page) =====
   // Les 5 dernières questions posées par l'utilisateur connecté, avec leur réponse
   const [myQuestions, setMyQuestions] = useState([]);
+  // Le dérouleur des anciennes questions est fermé par défaut
+  const [showOlder, setShowOlder] = useState(false);
 
   const fetchMyQuestions = useCallback(async () => {
     if (!currentUser) {
@@ -62,7 +69,7 @@ function FAQ() {
       .select('*')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(MAX_STORED_QUESTIONS);
 
     if (!error && data) setMyQuestions(data);
   }, [currentUser]);
@@ -122,6 +129,45 @@ function FAQ() {
     setTimeout(() => setSuggestionSent(false), 6000);
   }
 
+  // ===== Pile de questions : les récentes dehors, les anciennes dans un dérouleur =====
+  // Une question dont la réponse vient d'arriver (pas encore vue) reste TOUJOURS dehors.
+  // myQuestions est trié de la plus récente à la plus ancienne.
+  const isNewAnswer = (q) => Boolean(q.answer) && !q.seen_at;
+  let visibleQuestions = myQuestions;
+  let olderQuestions = [];
+
+  if (myQuestions.length > FOLD_ABOVE) {
+    visibleQuestions = myQuestions.filter((q, index) => index < ALWAYS_VISIBLE || isNewAnswer(q));
+    olderQuestions = myQuestions.filter((q, index) => !(index < ALWAYS_VISIBLE || isNewAnswer(q)));
+  }
+
+  // Dessine UNE question avec sa réponse (utilisé pour la liste visible et pour le dérouleur)
+  function renderQuestionCard(q, index) {
+    const answered = Boolean(q.answer);
+    const isNew = isNewAnswer(q); // réponse pas encore vue
+
+    return (
+      <article key={q.id ?? q.created_at ?? index} className={`my-question ${isNew ? 'my-question-new' : ''}`}>
+        <div className="my-question-head">
+          {/* Question soulignée en rouge quand la réponse est nouvelle */}
+          <p className={`my-question-text ${isNew ? 'my-question-text-new' : ''}`}>{q.question}</p>
+          {isNew && <span className="my-question-badge">Nouvelle réponse</span>}
+        </div>
+
+        {answered ? (
+          <p className="my-question-answer">{q.answer}</p>
+        ) : (
+          <p className="my-question-pending">
+            <Clock size={14} />
+            En attente de réponse...
+          </p>
+        )}
+
+        <p className="my-question-date">Posée le {formatDate(q.created_at)}</p>
+      </article>
+    );
+  }
+
   return (
     <div className="faq-page">
       <header className="faq-header fade-in-up">
@@ -136,7 +182,7 @@ function FAQ() {
       </header>
 
       <div className="faq-content">
-        {/* ===== AJOUT 3 : bloc "Mes questions", tout en haut de la page ===== */}
+        {/* ===== Bloc "Mes questions", tout en haut de la page ===== */}
         {currentUser && myQuestions.length > 0 && (
           <section className="my-questions">
             <h2 className="my-questions-title">
@@ -144,31 +190,29 @@ function FAQ() {
               Mes questions
             </h2>
 
-            {myQuestions.map((q, index) => {
-              const answered = Boolean(q.answer);
-              const isNew = answered && !q.seen_at; // réponse pas encore vue
+            {/* Questions récentes (et réponses toutes nouvelles) : toujours visibles */}
+            {visibleQuestions.map((q, index) => renderQuestionCard(q, index))}
 
-              return (
-                <article key={q.id ?? index} className={`my-question ${isNew ? 'my-question-new' : ''}`}>
-                  <div className="my-question-head">
-                    {/* Question soulignée en rouge quand la réponse est nouvelle */}
-                    <p className={`my-question-text ${isNew ? 'my-question-text-new' : ''}`}>{q.question}</p>
-                    {isNew && <span className="my-question-badge">Nouvelle réponse</span>}
+            {/* Questions plus anciennes : repliées dans un dérouleur */}
+            {olderQuestions.length > 0 && (
+              <div className="my-questions-older">
+                <button
+                  type="button"
+                  className="my-questions-toggle"
+                  onClick={() => setShowOlder(!showOlder)}
+                  aria-expanded={showOlder}
+                >
+                  <span>Questions précédentes ({olderQuestions.length})</span>
+                  <ChevronDown size={18} className={`faq-chevron ${showOlder ? 'faq-chevron-open' : ''}`} />
+                </button>
+
+                {showOlder && (
+                  <div className="my-questions-older-list">
+                    {olderQuestions.map((q, index) => renderQuestionCard(q, index))}
                   </div>
-
-                  {answered ? (
-                    <p className="my-question-answer">{q.answer}</p>
-                  ) : (
-                    <p className="my-question-pending">
-                      <Clock size={14} />
-                      En attente de réponse...
-                    </p>
-                  )}
-
-                  <p className="my-question-date">Posée le {formatDate(q.created_at)}</p>
-                </article>
-              );
-            })}
+                )}
+              </div>
+            )}
           </section>
         )}
 

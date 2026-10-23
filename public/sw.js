@@ -32,7 +32,12 @@ self.addEventListener('push', (event) => {
   // Les réponses FAQ se remplacent entre elles (pas de pile de notifications identiques)
   if (isFaq) options.tag = 'vela-faq';
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  // Un petit emoji devant le titre aide à reconnaître le type de notification d'un coup d'oeil,
+  // y compris sur iPhone où l'icône affichée est celle de l'application :
+  //  💬 = réponse à une question de la FAQ, 🚨 = alerte d'un détecteur
+  const shownTitle = (isFaq ? '💬 ' : '🚨 ') + title;
+
+  event.waitUntil(self.registration.showNotification(shownTitle, options));
 });
 
 // Gère le clic sur une notification : ouvre la bonne page de l'application
