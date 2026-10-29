@@ -5,6 +5,8 @@ import Chart from '../components/Chart/Chart';
 import { useDevices } from '../hooks/useDevices';
 import { useSensor } from '../hooks/useSensors';
 import { useReadings24h } from '../hooks/useReadings';
+// AJOUT : droits de l'utilisateur (ici, le droit de voir l'historique)
+import { useInstallation } from '../context/InstallationContext';
 import './DeviceDetail.css';
 
 function DeviceDetail() {
@@ -13,6 +15,9 @@ function DeviceDetail() {
   const navigate = useNavigate();
   const { devices, loading } = useDevices();
   const device = devices.find((d) => d.id === deviceId);
+
+  // AJOUT : a-t-il le droit de consulter l'historique de cet appareil ?
+  const { can } = useInstallation();
 
   // ===== 2. Dernière mesure réelle de cet appareil (Supabase) =====
   const { reading } = useSensor(deviceId);
@@ -48,13 +53,16 @@ function DeviceDetail() {
           <p className="detail-subtitle">Mesures et évolution de ce détecteur</p>
         </div>
 
-        <button
-          className="detail-history-btn"
-          onClick={() => navigate(`/devices/${device.id}/history`)}
-        >
-          <History size={16} />
-          Consulter l'historique
-        </button>
+        {/* CHANGEMENT : le bouton n'apparaît que si l'utilisateur a le droit de voir l'historique */}
+        {can(device.installation_id, 'view_history') && (
+          <button
+            className="detail-history-btn"
+            onClick={() => navigate(`/devices/${device.id}/history`)}
+          >
+            <History size={16} />
+            Consulter l'historique
+          </button>
+        )}
       </div>
 
       {/* ===== Dernières mesures (vraies données Supabase) ===== */}

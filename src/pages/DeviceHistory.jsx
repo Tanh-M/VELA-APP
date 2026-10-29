@@ -5,6 +5,8 @@ import {
   Bell, Volume2, Droplets, MessageSquare, Flame,
 } from 'lucide-react';
 import { useDevices } from '../hooks/useDevices';
+// AJOUT : droits de l'utilisateur (ici, le droit de voir l'historique)
+import { useInstallation } from '../context/InstallationContext';
 import { getMockHistory } from '../data/mockHistory';
 import { exportToExcel, exportToPdf } from '../utils/exportHistory';
 import {
@@ -43,6 +45,9 @@ function DeviceHistory() {
   const { devices, loading } = useDevices();
   const device = devices.find((d) => d.id === deviceId);
 
+  // AJOUT : droits de l'utilisateur. accessLoading = les droits sont encore en cours de chargement
+  const { can, loading: accessLoading } = useInstallation();
+
   // ===== 2. États de la page : filtres + menu d'export =====
   const [period, setPeriod] = useState('7d');
   const [levelFilter, setLevelFilter] = useState('all');
@@ -73,8 +78,10 @@ function DeviceHistory() {
     if (type === 'pdf') exportToPdf(device.name, events);
   }
 
-  // ===== 6. Cas particuliers : chargement / appareil introuvable =====
-  if (loading) return <p className="history-loading">Chargement...</p>;
+  // ===== 6. Cas particuliers : chargement / appareil introuvable / accès refusé =====
+  // CHANGEMENT : on attend aussi que les droits soient chargés, pour ne pas
+  // afficher "accès refusé" une fraction de seconde à tort
+  if (loading || accessLoading) return <p className="history-loading">Chargement...</p>;
 
   if (!device) {
     return (
@@ -83,6 +90,21 @@ function DeviceHistory() {
         <button className="history-back-btn" onClick={() => navigate('/devices')}>
           <ArrowLeft size={16} /> Retour aux appareils
         </button>
+      </div>
+    );
+  }
+
+  // AJOUT : sans le droit "voir l'historique", ni tableau ni export
+  if (!can(device.installation_id, 'view_history')) {
+    return (
+      <div className="history-page">
+        <button className="history-back-btn" onClick={() => navigate('/devices')}>
+          <ArrowLeft size={16} /> Retour aux appareils
+        </button>
+        <p className="history-empty">
+          Vous n'avez pas accès à l'historique de cet appareil. Demandez ce droit à
+          l'administrateur de l'installation.
+        </p>
       </div>
     );
   }
