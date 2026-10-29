@@ -58,6 +58,7 @@
   padding: 12px;
   border-radius: 8px;
   line-height: 1.4;
+  margin-bottom: 1rem; /* AJOUT : un peu d'espace sous le message */
 }
 
 .auth-form {
@@ -126,6 +127,52 @@
 
 .auth-submit-btn:hover {
   opacity: 0.9;
+}
+
+/* AJOUT : bouton grisé pendant un envoi */
+.auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* AJOUT : champ du code à 6 chiffres, en grand et centré */
+.auth-form .auth-code-input {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-align: center;
+}
+
+/* AJOUT : bouton secondaire (ex. "Renvoyer le code") */
+.auth-secondary-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.auth-secondary-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* AJOUT : petit lien en forme de bouton (ex. "Afficher les mots de passe") */
+.auth-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.auth-link-btn:hover {
+  text-decoration: underline;
 }
 
 .auth-switch {

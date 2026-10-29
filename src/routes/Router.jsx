@@ -18,6 +18,8 @@ import ThresholdGuide from '../pages/ThresholdGuide';
 import DeviceHistory from '../pages/DeviceHistory';
 // AJOUT : page de détail d'un appareil (graphe 24h)
 import DeviceDetail from '../pages/DeviceDetail';
+// AJOUT : page de partage (membres, invitations, permissions)
+import Sharing from '../pages/Sharing';
 
 // Réserve une page aux utilisateurs connectés.
 // "loading" : tant que Supabase vérifie la session (rechargement, nouvel onglet),
@@ -58,6 +60,8 @@ function Router() {
       <Route path="/alerts" element={<PrivateRoute><Alerts /></PrivateRoute>} />
       <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="/parametres" element={<PrivateRoute><Settings /></PrivateRoute>} />
+      {/* AJOUT : partage de l'installation (membres, invitations, permissions) */}
+      <Route path="/partage" element={<PrivateRoute><Sharing /></PrivateRoute>} />
       {/* Nouvelle page : guide interactif des seuils d'alerte */}
       <Route path="/guide-seuils" element={<PrivateRoute><ThresholdGuide /></PrivateRoute>} />
     </Routes>

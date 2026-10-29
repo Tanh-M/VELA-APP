@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Plus, X, MoreVertical, Sliders, Trash2, History } from 'lucide-react';
+import { Plus, X, MoreVertical, Sliders, Trash2, History, Users } from 'lucide-react';
 import SensorCard from '../components/SensorCard/SensorCard';
 import DeviceThresholdModal from '../components/DeviceThresholdModal/DeviceThresholdModal';
 import { useDevices } from '../hooks/useDevices';
 import { useSensor } from '../hooks/useSensors';
+// AJOUT : rôle et permissions de l'utilisateur
+import { useInstallation } from '../context/InstallationContext';
 import './Devices.css';
 
 // Indique si un appareil possède au moins un seuil personnalisé
@@ -52,6 +54,10 @@ function Devices() {
     refreshDevices,
   } = useDevices();
 
+  // AJOUT : what can the user do ? (can = a-t-il cette permission pour cette installation)
+  // getRole = 'admin' / 'member' ; canAddDevice = peut-il ajouter un appareil
+  const { can, getRole, canAddDevice } = useInstallation();
+
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,6 +70,7 @@ function Devices() {
   const navigate = useNavigate();
 
   // Ouvre la fenêtre des seuils si l'URL contient ?edit=<id>
+  // CHANGEMENT : uniquement si l'utilisateur a le droit de modifier les seuils
   useEffect(() => {
     const editId = searchParams.get('edit');
 
@@ -71,10 +78,12 @@ function Devices() {
 
     const target = devices.find((device) => device.id === editId);
 
-    if (target) setEditingDevice(target);
+    if (target && can(target.installation_id, 'edit_thresholds')) {
+      setEditingDevice(target);
+    }
 
     setSearchParams({}, { replace: true });
-  }, [searchParams, devices, setSearchParams]);
+  }, [searchParams, devices, setSearchParams, can]);
 
   // Ajoute un détecteur
   async function handleAddDevice(e) {
@@ -122,13 +131,16 @@ function Devices() {
           </p>
         </div>
 
-        <button
-          className="add-device-btn"
-          onClick={() => setShowForm(true)}
-        >
-          <Plus size={16} />
-          Ajouter un détecteur
-        </button>
+        {/* CHANGEMENT : le bouton n'apparaît que si l'utilisateur peut ajouter un appareil */}
+        {canAddDevice && (
+          <button
+            className="add-device-btn"
+            onClick={() => setShowForm(true)}
+          >
+            <Plus size={16} />
+            Ajouter un détecteur
+          </button>
+        )}
       </div>
 
       {/* Fenêtre d'ajout d'un détecteur */}
@@ -197,74 +209,106 @@ function Devices() {
         <p className="devices-loading">Chargement...</p>
       ) : devices.length === 0 ? (
         <p className="no-devices">
-          Aucun détecteur pour l'instant. Ajoutez-en un pour commencer.
+          {/* CHANGEMENT : message différent si l'utilisateur ne peut pas ajouter d'appareil */}
+          {canAddDevice
+            ? "Aucun détecteur pour l'instant. Ajoutez-en un pour commencer."
+            : "Aucun détecteur partagé avec vous pour l'instant."}
         </p>
       ) : (
         <div className="sensor-grid">
-          {devices.map((device) => (
-            // Un clic sur la carte ouvre la page de détail (graphe 24h)
-            <div
-              key={device.id}
-              className="device-card-wrapper"
-              onClick={() => navigate(`/devices/${device.id}`)}
-            >
-              <button
-                className="device-menu-btn"
-                onClick={(e) => {
-                  // Le clic sur ⋮ ne doit pas ouvrir la page de détail
-                  e.stopPropagation();
-                  setOpenMenuId(openMenuId === device.id ? null : device.id);
-                }}
+          {devices.map((device) => {
+            // AJOUT : droits de l'utilisateur sur CET appareil (selon son installation)
+            const canHistory = can(device.installation_id, 'view_history');
+            const canThresholds = can(device.installation_id, 'edit_thresholds');
+            const canDelete = can(device.installation_id, 'manage_devices');
+
+            // Le menu "⋮" n'existe que si au moins une option est permise
+            const hasMenu = canHistory || canThresholds || canDelete;
+
+            // Appareil partagé par quelqu'un d'autre (l'utilisateur y est simple membre)
+            const isShared = getRole(device.installation_id) === 'member';
+
+            return (
+              // Un clic sur la carte ouvre la page de détail (graphe 24h)
+              <div
+                key={device.id}
+                className="device-card-wrapper"
+                onClick={() => navigate(`/devices/${device.id}`)}
               >
-                <MoreVertical size={16} />
-              </button>
-
-              {/* Menu de gestion de l'appareil */}
-              {openMenuId === device.id && (
-                // Un clic dans le menu ne doit pas non plus ouvrir la page de détail
-                <div className="device-menu-dropdown" onClick={(e) => e.stopPropagation()}>
+                {hasMenu && (
                   <button
-                    onClick={() => {
-                      setOpenMenuId(null);
-                      navigate(`/devices/${device.id}/history`);
+                    className="device-menu-btn"
+                    onClick={(e) => {
+                      // Le clic sur ⋮ ne doit pas ouvrir la page de détail
+                      e.stopPropagation();
+                      setOpenMenuId(openMenuId === device.id ? null : device.id);
                     }}
                   >
-                    <History size={14} />
-                    Consulter l'historique
+                    <MoreVertical size={16} />
                   </button>
+                )}
 
-                  <button
-                    onClick={() => {
-                      setEditingDevice(device);
-                      setOpenMenuId(null);
-                    }}
-                  >
-                    <Sliders size={14} />
-                    Modifier les seuils
-                  </button>
+                {/* Menu de gestion de l'appareil : chaque option dépend d'un droit */}
+                {hasMenu && openMenuId === device.id && (
+                  // Un clic dans le menu ne doit pas non plus ouvrir la page de détail
+                  <div className="device-menu-dropdown" onClick={(e) => e.stopPropagation()}>
+                    {canHistory && (
+                      <button
+                        onClick={() => {
+                          setOpenMenuId(null);
+                          navigate(`/devices/${device.id}/history`);
+                        }}
+                      >
+                        <History size={14} />
+                        Consulter l'historique
+                      </button>
+                    )}
 
-                  <button
-                    className="device-menu-danger"
-                    onClick={() => handleDeleteDevice(device)}
-                  >
-                    <Trash2 size={14} />
-                    Supprimer l'appareil
-                  </button>
-                </div>
-              )}
+                    {canThresholds && (
+                      <button
+                        onClick={() => {
+                          setEditingDevice(device);
+                          setOpenMenuId(null);
+                        }}
+                      >
+                        <Sliders size={14} />
+                        Modifier les seuils
+                      </button>
+                    )}
 
-              {/* Carte et dernières mesures du capteur */}
-              <DeviceSensorCard device={device} />
+                    {canDelete && (
+                      <button
+                        className="device-menu-danger"
+                        onClick={() => handleDeleteDevice(device)}
+                      >
+                        <Trash2 size={14} />
+                        Supprimer l'appareil
+                      </button>
+                    )}
+                  </div>
+                )}
 
-              {/* Indique si l'appareil possède des seuils personnalisés */}
-              {hasCustomThresholds(device) && (
-                <p className="device-custom-tag">
-                  <Sliders size={12} />
-                  Seuils personnalisés
-                </p>
-              )}
-            </div>
-          ))}
+                {/* Carte et dernières mesures du capteur */}
+                <DeviceSensorCard device={device} />
+
+                {/* Indique si l'appareil possède des seuils personnalisés */}
+                {hasCustomThresholds(device) && (
+                  <p className="device-custom-tag">
+                    <Sliders size={12} />
+                    Seuils personnalisés
+                  </p>
+                )}
+
+                {/* AJOUT : étiquette pour un appareil partagé avec l'utilisateur */}
+                {isShared && (
+                  <p className="device-custom-tag">
+                    <Users size={12} />
+                    Accès partagé
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

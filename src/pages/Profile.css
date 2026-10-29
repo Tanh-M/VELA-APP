@@ -81,6 +81,148 @@
   padding-bottom: 2rem;
 }
 
+/* ===== AJOUT : blocs "Informations personnelles" et "Mot de passe" ===== */
+.profile-section {
+  max-width: 400px;
+  margin-top: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  background-color: var(--bg-surface);
+}
+
+.profile-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.profile-section-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.profile-field-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.profile-field input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.profile-field input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.profile-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Message de succès ou d'erreur sous un formulaire */
+.profile-msg {
+  font-size: 0.82rem;
+  padding: 10px 12px;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+
+.profile-msg-ok {
+  background-color: #EAF3DE;
+  color: #27500A;
+}
+
+.profile-msg-error {
+  background-color: #FCEBEB;
+  color: #791F1F;
+}
+
+.profile-save-btn {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.profile-save-btn:hover {
+  opacity: 0.9;
+}
+
+.profile-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.profile-link-btn:hover {
+  text-decoration: underline;
+}
+
+.profile-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.25rem 0;
+}
+
+/* Note affichée à un simple membre quand un réglage est verrouillé */
+.profile-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.profile-locked svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ===== Zone de danger ===== */
 .danger-zone {
   max-width: 400px;
   margin-top: 1.5rem;
@@ -124,6 +266,7 @@
 
 @media (max-width: 480px) {
   .profile-card,
+  .profile-section,
   .danger-zone {
     max-width: 100%;
   }

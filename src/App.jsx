@@ -7,6 +7,8 @@ import Navbar from './components/Navbar/Navbar';
 import SplashScreen from './components/SplashScreen/SplashScreen';
 // AJOUT 1 : useAuth, pour savoir si l'utilisateur est déjà connecté
 import { AuthProvider, useAuth } from './context/AuthContext';
+// AJOUT 3 : contexte des installations (rôle et permissions de l'utilisateur)
+import { InstallationProvider } from './context/InstallationContext';
 import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
 
@@ -85,9 +87,12 @@ function App() {
       <SplashScreen />
 
       <AuthProvider>
-        <BrowserRouter>
-          <AppLayout />
-        </BrowserRouter>
+        {/* AJOUT 3 : doit être DANS AuthProvider, car il a besoin de l'utilisateur connecté */}
+        <InstallationProvider>
+          <BrowserRouter>
+            <AppLayout />
+          </BrowserRouter>
+        </InstallationProvider>
       </AuthProvider>
     </ThemeProvider>
   );

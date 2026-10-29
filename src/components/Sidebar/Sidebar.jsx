@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Home, LayoutDashboard, Cpu, Bell, Settings as SettingsIcon, X } from 'lucide-react';
+import { Home, LayoutDashboard, Cpu, Bell, Users, Settings as SettingsIcon, X } from 'lucide-react';
 import logo from '../../assets/icons/logo-vela.svg';
 import './Sidebar.css';
 
@@ -39,6 +39,12 @@ function Sidebar({ isOpen, onClose }) {
           <Link to="/alerts" className="sidebar-link" onClick={onClose}>
             <Bell size={18} />
             <span>Alertes</span>
+          </Link>
+
+          {/* AJOUT : gestion des accès partagés (membres, invitations) */}
+          <Link to="/partage" className="sidebar-link" onClick={onClose}>
+            <Users size={18} />
+            <span>Partage</span>
           </Link>
 
           <Link to="/parametres" className="sidebar-link" onClick={onClose}>

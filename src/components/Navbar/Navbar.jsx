@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import { Bell, User, Sun, Moon, Menu } from 'lucide-react';
+import { Bell, User, Sun, Moon, Menu, Mail } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+// AJOUT : pour afficher le badge des invitations reçues
+import { useInstallation } from '../../context/InstallationContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { generateAlerts } from '../../utils/alertRules';
 import { mockSensors } from '../../data/mockSensors';
@@ -11,6 +13,7 @@ import './Navbar.css';
 function Navbar({ onMenuClick }) {
   const { theme, toggleTheme } = useTheme();
   const { currentUser } = useAuth();
+  const { invitations } = useInstallation();
   const navigate = useNavigate();
 
   // Notifications système classiques (Niveau 1 : app ouverte, même en arrière-plan)
@@ -37,6 +40,18 @@ function Navbar({ onMenuClick }) {
         <button className="navbar-icon-btn" onClick={toggleTheme}>
           {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
         </button>
+
+        {/* AJOUT : n'apparaît que s'il y a une invitation en attente ; mène à la page Partage */}
+        {invitations.length > 0 && (
+          <button
+            className="navbar-icon-btn navbar-bell"
+            onClick={() => navigate('/partage')}
+            title="Vous avez une invitation"
+          >
+            <Mail size={20} />
+            <span className="navbar-badge">{invitations.length}</span>
+          </button>
+        )}
 
         <button className="navbar-icon-btn navbar-bell" onClick={() => navigate('/alerts')}>
           <Bell size={20} />
