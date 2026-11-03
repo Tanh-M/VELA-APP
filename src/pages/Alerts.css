@@ -44,7 +44,7 @@
   padding: 10px 20px;
 }
 
-/* ===== AJOUT : message d'erreur de chargement ===== */
+/* ===== Message d'erreur de chargement ===== */
 .alerts-error {
   background-color: #FCEBEB;
   color: #791F1F;
@@ -54,7 +54,7 @@
   margin-bottom: 1rem;
 }
 
-/* ===== AJOUT : appareils actuellement en alerte ===== */
+/* ===== Appareils actuellement en alerte ===== */
 .alerts-active-list {
   display: flex;
   flex-direction: column;
