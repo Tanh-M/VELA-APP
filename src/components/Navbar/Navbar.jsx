@@ -2,11 +2,10 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, User, Sun, Moon, Menu, Mail } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
-// AJOUT : pour afficher le badge des invitations reçues
 import { useInstallation } from '../../context/InstallationContext';
 import { useNotifications } from '../../hooks/useNotifications';
-import { generateAlerts } from '../../utils/alertRules';
-import { mockSensors } from '../../data/mockSensors';
+// CHANGEMENT : alertes réelles à la place des données de démonstration
+import { useAlerts } from '../../hooks/useAlerts';
 import './Navbar.css';
 
 // Navbar = barre du haut, présente sur toutes les pages internes
@@ -24,7 +23,9 @@ function Navbar({ onMenuClick }) {
   // car les navigateurs bloquent la popup de permission si elle n'est pas
   // déclenchée par un vrai clic utilisateur.
 
-  const alertCount = generateAlerts(mockSensors).length;
+  // Nombre d'appareils actuellement en alerte (vraies données)
+  const { active } = useAlerts();
+  const alertCount = active.length;
   const displayName = currentUser?.user_metadata?.full_name || currentUser?.email || 'Utilisateur';
 
   return (
@@ -41,7 +42,7 @@ function Navbar({ onMenuClick }) {
           {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
         </button>
 
-        {/* AJOUT : n'apparaît que s'il y a une invitation en attente ; mène à la page Partage */}
+        {/* N'apparaît que s'il y a une invitation en attente ; mène à la page Partage */}
         {invitations.length > 0 && (
           <button
             className="navbar-icon-btn navbar-bell"

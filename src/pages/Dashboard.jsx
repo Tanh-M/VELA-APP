@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Circle, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Circle, CheckCircle2 } from 'lucide-react';
 import SensorCard from '../components/SensorCard/SensorCard';
 import { useDevices } from '../hooks/useDevices';
 import { useSensor } from '../hooks/useSensors';
-// AJOUT : droits de l'utilisateur (ici, le droit de voir l'historique)
 import { useInstallation } from '../context/InstallationContext';
-import { getMockHistory } from '../data/mockHistory';
+// AJOUT : alertes réelles et derniers événements réels
+import { useAlerts } from '../hooks/useAlerts';
+import { useRecentEvents } from '../hooks/useDeviceEvents';
 import { LEVEL_LABELS, formatDate, formatTime } from '../utils/historyLabels';
 import './Dashboard.css';
 
@@ -29,35 +30,32 @@ function DashboardSensorCard({ device }) {
 }
 
 function Dashboard() {
-  // Récupère les vrais appareils de l'utilisateur connecté depuis Supabase
+  // Récupère les vrais appareils auxquels l'utilisateur a accès
   const { devices, loading } = useDevices();
 
-  // AJOUT : droits de l'utilisateur
+  // Droits de l'utilisateur
   const { can } = useInstallation();
+
+  // AJOUT : appareils actuellement en alerte (vraies données)
+  const { active } = useAlerts();
 
   // Compte les appareils réellement en ligne, pour la bannière d'état système
   const onlineCount = devices.filter((d) => d.is_online).length;
 
-  // AJOUT : appareils dont l'utilisateur a le droit de voir l'historique
+  // Appareils dont l'utilisateur a le droit de voir l'historique
   const historyDevices = useMemo(
     () => devices.filter((d) => can(d.installation_id, 'view_history')),
     [devices, can]
   );
+  const historyIds = useMemo(() => historyDevices.map((d) => d.id), [historyDevices]);
 
-  // Derniers événements des appareils dont l'historique est autorisé,
-  // du plus récent au plus ancien.
-  // TEMPORAIRE : données virtuelles (getMockHistory), à remplacer par la table device_events.
-  // CHANGEMENT : on part de historyDevices et non plus de tous les appareils
-  const recentEvents = useMemo(() => {
-    return historyDevices
-      .flatMap((device) =>
-        getMockHistory(device.id)
-          .slice(0, 5)
-          .map((event) => ({ ...event, deviceName: device.name }))
-      )
-      .sort((a, b) => new Date(b.occurred_at) - new Date(a.occurred_at))
-      .slice(0, 6);
-  }, [historyDevices]);
+  // CHANGEMENT : derniers événements RÉELS (table device_events) de ces appareils
+  const { events: recentEvents } = useRecentEvents(historyIds, 6);
+
+  // Nom d'un appareil à partir de son identifiant
+  function deviceName(deviceId) {
+    return devices.find((d) => d.id === deviceId)?.name || 'Appareil';
+  }
 
   return (
     // fade-in-up : légère animation d'apparition (montée + fondu), définie dans index.css
@@ -78,16 +76,40 @@ function Dashboard() {
         </div>
       ) : (
         <>
-          {/* Bannière d'état système : basée sur les VRAIES données (pas inventée) */}
-          <div className="status-banner">
-            <ShieldCheck size={20} />
-            <div>
-              <p className="status-banner-title">
-                {onlineCount} appareil(s) en ligne sur {devices.length}
-              </p>
-              <p className="status-banner-sub">Aucune anomalie détectée pour l'instant</p>
+          {/* Bannière d'état système : basée sur les VRAIES données */}
+          {active.length > 0 ? (
+            // Au moins un appareil en alerte : bannière rouge (styles en ligne, pas de CSS à ajouter)
+            <div
+              className="status-banner"
+              style={{
+                backgroundColor: 'rgba(216, 90, 48, 0.14)',
+                border: '1px solid rgba(216, 90, 48, 0.55)',
+                color: 'var(--text-primary)',
+              }}
+            >
+              <ShieldAlert size={20} />
+              <div>
+                <p className="status-banner-title">
+                  {active.length} appareil(s) en alerte
+                </p>
+                <p className="status-banner-sub">
+                  <Link to="/alerts" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                    Voir les alertes
+                  </Link>
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="status-banner">
+              <ShieldCheck size={20} />
+              <div>
+                <p className="status-banner-title">
+                  {onlineCount} appareil(s) en ligne sur {devices.length}
+                </p>
+                <p className="status-banner-sub">Aucune anomalie détectée pour l'instant</p>
+              </div>
+            </div>
+          )}
 
           {/* Grille des fiches capteur : un clic ouvre le détail de l'appareil */}
           <div className="sensor-grid">
@@ -97,33 +119,32 @@ function Dashboard() {
           </div>
 
           {/* ===== Derniers événements des appareils dont l'historique est autorisé ===== */}
-          {/* CHANGEMENT : le bloc n'apparaît que si au moins un appareil a l'historique autorisé */}
           {historyDevices.length > 0 && (
             <div className="recent-events-card">
               <h3>Derniers événements</h3>
 
-              {recentEvents.map((event) => (
-                // Un clic sur une ligne ouvre l'historique de l'appareil concerné
-                <Link
-                  key={event.id}
-                  to={`/devices/${event.device_id}/history`}
-                  className="recent-event-row"
-                >
-                  <div>
-                    <p className="recent-event-name">{event.deviceName}</p>
-                    <p className="recent-event-date">
-                      {formatDate(event.occurred_at)} à {formatTime(event.occurred_at)}
-                    </p>
-                  </div>
-                  <span className={`recent-event-level recent-event-level-${event.level}`}>
-                    {LEVEL_LABELS[event.level]}
-                  </span>
-                </Link>
-              ))}
-
-              <p className="recent-events-note">
-                Événements en données de démonstration, en attendant le système embarqué.
-              </p>
+              {recentEvents.length === 0 ? (
+                <p className="recent-events-note">Aucun événement enregistré pour le moment.</p>
+              ) : (
+                recentEvents.map((event) => (
+                  // Un clic sur une ligne ouvre l'historique de l'appareil concerné
+                  <Link
+                    key={event.id}
+                    to={`/devices/${event.device_id}/history`}
+                    className="recent-event-row"
+                  >
+                    <div>
+                      <p className="recent-event-name">{deviceName(event.device_id)}</p>
+                      <p className="recent-event-date">
+                        {formatDate(event.occurred_at)} à {formatTime(event.occurred_at)}
+                      </p>
+                    </div>
+                    <span className={`recent-event-level recent-event-level-${event.level}`}>
+                      {LEVEL_LABELS[event.level]}
+                    </span>
+                  </Link>
+                ))
+              )}
             </div>
           )}
 

@@ -5,9 +5,9 @@ import {
   Bell, Volume2, Droplets, MessageSquare, Flame,
 } from 'lucide-react';
 import { useDevices } from '../hooks/useDevices';
-// AJOUT : droits de l'utilisateur (ici, le droit de voir l'historique)
+// CHANGEMENT : historique réel (table device_events) à la place des fausses données
+import { useDeviceEvents } from '../hooks/useDeviceEvents';
 import { useInstallation } from '../context/InstallationContext';
-import { getMockHistory } from '../data/mockHistory';
 import { exportToExcel, exportToPdf } from '../utils/exportHistory';
 import {
   LEVEL_LABELS, ACTION_LABELS, formatDate, formatTime,
@@ -45,7 +45,7 @@ function DeviceHistory() {
   const { devices, loading } = useDevices();
   const device = devices.find((d) => d.id === deviceId);
 
-  // AJOUT : droits de l'utilisateur. accessLoading = les droits sont encore en cours de chargement
+  // Droits de l'utilisateur. accessLoading = les droits sont encore en cours de chargement
   const { can, loading: accessLoading } = useInstallation();
 
   // ===== 2. États de la page : filtres + menu d'export =====
@@ -53,10 +53,12 @@ function DeviceHistory() {
   const [levelFilter, setLevelFilter] = useState('all');
   const [exportOpen, setExportOpen] = useState(false);
 
-  // ===== 3. Données =====
-  // TEMPORAIRE : fausses données. Plus tard on remplacera cette ligne
-  // par un hook qui lit la table "device_events" de Supabase.
-  const allEvents = useMemo(() => getMockHistory(deviceId), [deviceId]);
+  // ===== 3. Données : événements réels de cet appareil (Supabase) =====
+  const {
+    events: allEvents,
+    loading: eventsLoading,
+    error: eventsError,
+  } = useDeviceEvents(deviceId);
 
   // ===== 4. Application des filtres (période + niveau) =====
   const events = useMemo(() => {
@@ -79,8 +81,6 @@ function DeviceHistory() {
   }
 
   // ===== 6. Cas particuliers : chargement / appareil introuvable / accès refusé =====
-  // CHANGEMENT : on attend aussi que les droits soient chargés, pour ne pas
-  // afficher "accès refusé" une fraction de seconde à tort
   if (loading || accessLoading) return <p className="history-loading">Chargement...</p>;
 
   if (!device) {
@@ -94,7 +94,7 @@ function DeviceHistory() {
     );
   }
 
-  // AJOUT : sans le droit "voir l'historique", ni tableau ni export
+  // Sans le droit "voir l'historique", ni tableau ni export
   if (!can(device.installation_id, 'view_history')) {
     return (
       <div className="history-page">
@@ -176,9 +176,19 @@ function DeviceHistory() {
         <span className="history-count">{events.length} événement(s)</span>
       </div>
 
-      {/* ===== Tableau (ou message si rien à afficher) ===== */}
-      {events.length === 0 ? (
-        <p className="history-empty">Aucun événement pour ces filtres.</p>
+      {/* ===== Tableau (ou message : chargement, erreur, rien à afficher) ===== */}
+      {eventsLoading ? (
+        <p className="history-loading">Chargement...</p>
+      ) : eventsError ? (
+        <p role="alert" className="history-empty">
+          Impossible de charger l'historique : {eventsError}
+        </p>
+      ) : events.length === 0 ? (
+        <p className="history-empty">
+          {allEvents.length === 0
+            ? 'Aucun événement enregistré pour le moment.'
+            : 'Aucun événement pour ces filtres.'}
+        </p>
       ) : (
         // history-table-wrapper : permet le défilement horizontal sur mobile
         <div className="history-table-wrapper">
@@ -197,47 +207,52 @@ function DeviceHistory() {
             </thead>
 
             <tbody>
-              {events.map((e) => (
-                <tr key={e.id}>
-                  <td>{formatDate(e.occurred_at)}</td>
-                  <td>{formatTime(e.occurred_at)}</td>
-                  <td>{e.temperature ?? '-'}</td>
-                  <td>{e.smoke_level ?? '-'}</td>
-                  <td>{e.gas_level ?? '-'}</td>
-                  <td>
-                    {e.flame_detected ? (
-                      <span className="history-flame"><Flame size={14} /> Oui</span>
-                    ) : (
-                      'Non'
-                    )}
-                  </td>
+              {events.map((e) => {
+                // On ne garde que les actions connues (icône et libellé disponibles)
+                const shownActions = (e.actions ?? []).filter((a) => ACTION_ICONS[a]);
 
-                  {/* Pastille de niveau : verte / ambre / rouge */}
-                  <td>
-                    <span className={`history-level history-level-${e.level}`}>
-                      {LEVEL_LABELS[e.level]}
-                    </span>
-                  </td>
+                return (
+                  <tr key={e.id}>
+                    <td>{formatDate(e.occurred_at)}</td>
+                    <td>{formatTime(e.occurred_at)}</td>
+                    <td>{e.temperature ?? '-'}</td>
+                    <td>{e.smoke_level ?? '-'}</td>
+                    <td>{e.gas_level ?? '-'}</td>
+                    <td>
+                      {e.flame_detected ? (
+                        <span className="history-flame"><Flame size={14} /> Oui</span>
+                      ) : (
+                        'Non'
+                      )}
+                    </td>
 
-                  {/* Une étiquette par action déclenchée */}
-                  <td>
-                    {e.actions.length === 0 ? (
-                      <span className="history-no-action">Aucune</span>
-                    ) : (
-                      <div className="history-actions">
-                        {e.actions.map((action) => {
-                          const Icon = ACTION_ICONS[action];
-                          return (
-                            <span key={action} className="history-action-tag">
-                              <Icon size={12} /> {ACTION_LABELS[action]}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    {/* Pastille de niveau : verte / ambre / rouge */}
+                    <td>
+                      <span className={`history-level history-level-${e.level}`}>
+                        {LEVEL_LABELS[e.level]}
+                      </span>
+                    </td>
+
+                    {/* Une étiquette par action déclenchée */}
+                    <td>
+                      {shownActions.length === 0 ? (
+                        <span className="history-no-action">Aucune</span>
+                      ) : (
+                        <div className="history-actions">
+                          {shownActions.map((action) => {
+                            const Icon = ACTION_ICONS[action];
+                            return (
+                              <span key={action} className="history-action-tag">
+                                <Icon size={12} /> {ACTION_LABELS[action]}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
