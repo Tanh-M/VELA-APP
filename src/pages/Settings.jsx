@@ -5,16 +5,23 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+// AJOUT : rôle de l'utilisateur, pour réserver le mode démonstration aux administrateurs
+import { useInstallation } from '../context/InstallationContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { sendPushNotification } from '../utils/sendPushNotification';
 import { getThresholds, generateAlerts } from '../utils/alertRules';
 import { mockSensors } from '../data/mockSensors';
+// AJOUT : mode démonstration (interrupteur + panneau)
+import { DEMO_MODE_ENABLED } from '../config/demo';
+import DemoPanel from '../components/DemoPanel/DemoPanel';
 import './Settings.css';
 
 // Page Paramètres : apparence, seuils par défaut (lecture seule), notifications, aide
 function Settings() {
   const { theme, toggleTheme } = useTheme();
   const { currentUser } = useAuth();
+  // AJOUT : true si l'utilisateur administre au moins une installation
+  const { isAdminSomewhere } = useInstallation();
   const [notifEmail, setNotifEmail] = useState(false);
   const [simulating, setSimulating] = useState(false);
 
@@ -142,6 +149,9 @@ function Settings() {
           </button>
         </div>
       </div>
+
+      {/* ===== AJOUT : Mode démonstration (administrateurs uniquement, désactivable dans src/config/demo.js) ===== */}
+      {DEMO_MODE_ENABLED && isAdminSomewhere && <DemoPanel />}
 
       {/* ===== Aide ===== */}
       <div className="settings-card">
