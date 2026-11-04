@@ -1,4 +1,10 @@
 /* ===== Page Partage : gestion des accès à une installation ===== */
+/* CHANGEMENT : contenu centré dans la page, dans une colonne de 900 px maximum */
+.sharing-page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
 .sharing-page h1 {
   font-size: 1.4rem;
   font-weight: 600;
@@ -23,7 +29,6 @@
   padding: 10px 12px;
   border-radius: 8px;
   margin-bottom: 1rem;
-  max-width: 640px;
   line-height: 1.4;
 }
 
@@ -37,14 +42,13 @@
   color: #791F1F;
 }
 
-/* Carte d'une section */
+/* Carte d'une section : elle occupe toute la largeur de la colonne centrée */
 .sharing-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
   margin-bottom: 1rem;
-  max-width: 640px;
 }
 
 .sharing-card h3 {
@@ -232,6 +236,45 @@
 .sharing-btn-danger:hover {
   background-color: var(--danger);
   color: white;
+}
+
+/* ===== AJOUT : fenêtre de confirmation avec mot de passe ===== */
+.sharing-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.sharing-modal {
+  background-color: var(--bg-surface);
+  border-radius: 14px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sharing-modal h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sharing-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 0.5rem;
 }
 
 /* ===== Responsive : mobile ===== */

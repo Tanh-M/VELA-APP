@@ -6,8 +6,14 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from './AuthContext';
+// AJOUT : mises à jour en direct (sans recharger la page)
+import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useRealtimeRefresh } from '../hooks/useRealtimeRefresh';
 
 const InstallationContext = createContext();
+
+// Compare deux listes : évite de rafraîchir l'écran quand rien n'a changé
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 export function InstallationProvider({ children }) {
   const { currentUser } = useAuth();
@@ -17,7 +23,7 @@ export function InstallationProvider({ children }) {
   const [memberships, setMemberships] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // AJOUT : invitations reçues par l'utilisateur (en attente de réponse)
+  // Invitations reçues par l'utilisateur (en attente de réponse)
   const [invitations, setInvitations] = useState([]);
 
   // Récupère les accès de l'utilisateur connecté (la sécurité RLS ne renvoie que ses propres lignes)
@@ -36,11 +42,14 @@ export function InstallationProvider({ children }) {
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: true });
 
-    if (!error) setMemberships(data ?? []);
+    if (!error) {
+      const next = data ?? [];
+      setMemberships((prev) => (same(prev, next) ? prev : next));
+    }
     setLoading(false);
   }, [currentUser?.id]);
 
-  // AJOUT : récupère les invitations reçues (fonction SQL my_pending_invitations)
+  // Récupère les invitations reçues (fonction SQL my_pending_invitations)
   const fetchInvitations = useCallback(async () => {
     if (!currentUser) {
       setInvitations([]);
@@ -48,7 +57,10 @@ export function InstallationProvider({ children }) {
     }
 
     const { data, error } = await supabase.rpc('my_pending_invitations');
-    if (!error) setInvitations(data ?? []);
+    if (!error) {
+      const next = data ?? [];
+      setInvitations((prev) => (same(prev, next) ? prev : next));
+    }
   }, [currentUser?.id]);
 
   // Recharge à chaque changement d'utilisateur connecté (connexion / déconnexion)
@@ -57,10 +69,24 @@ export function InstallationProvider({ children }) {
     fetchMemberships();
   }, [fetchMemberships]);
 
-  // AJOUT : idem pour les invitations
   useEffect(() => {
     fetchInvitations();
   }, [fetchInvitations]);
+
+  // AJOUT : mises à jour automatiques
+  // - à l'arrivée d'une invitation ou d'un changement de droits : immédiat (Realtime)
+  // - toutes les 20 secondes et au retour de l'application au premier plan (retraits d'accès)
+  function refreshAll() {
+    fetchMemberships();
+    fetchInvitations();
+  }
+  useLiveRefresh(refreshAll);
+  useRealtimeRefresh(
+    'installation-context',
+    ['installation_members', 'installation_invitations'],
+    refreshAll,
+    !!currentUser
+  );
 
   // Rôle de l'utilisateur dans une installation : 'admin', 'member' ou null (aucun accès)
   const getRole = useCallback(
@@ -82,7 +108,7 @@ export function InstallationProvider({ children }) {
     [memberships]
   );
 
-  // AJOUT : installations dont l'utilisateur est administrateur
+  // Installations dont l'utilisateur est administrateur
   const adminInstallations = memberships.filter((m) => m.role === 'admin');
 
   // Est-il administrateur d'au moins une installation ?

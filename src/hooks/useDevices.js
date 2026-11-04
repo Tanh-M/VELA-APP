@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
-// AJOUT : pour savoir dans quelle installation ajouter un appareil
+// Pour savoir dans quelle installation ajouter un appareil
 import { useInstallation } from '../context/InstallationContext';
+// AJOUT : mises à jour en direct (sans recharger la page)
+import { useLiveRefresh } from './useLiveRefresh';
+import { useRealtimeRefresh } from './useRealtimeRefresh';
+
+// Compare deux listes : évite de rafraîchir l'écran quand rien n'a changé
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 // Hook personnalisé : gère les appareils (détecteurs) auxquels l'utilisateur a accès
 // (les siens + ceux qu'on a partagés avec lui)
@@ -27,7 +33,8 @@ export function useDevices() {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error) setDevices(data);
+    // CHANGEMENT : on ne remplace la liste que si elle a vraiment changé
+    if (!error) setDevices((prev) => (same(prev, data) ? prev : data));
     setLoading(false);
   }
 
@@ -36,10 +43,16 @@ export function useDevices() {
     fetchDevices();
   }, [currentUser]);
 
+  // AJOUT : mises à jour automatiques
+  // - ajout ou modification d'un appareil : immédiat (Realtime)
+  // - toutes les 20 secondes et au retour de l'application au premier plan (suppressions)
+  useLiveRefresh(fetchDevices);
+  useRealtimeRefresh('devices', ['devices'], fetchDevices, !!currentUser);
+
   // Ajoute un appareil. is_online démarre à false : il ne passera "en ligne"
   // que lorsque le système embarqué enverra un premier relevé.
-  // CHANGEMENT : on précise l'installation. Si l'utilisateur n'en a aucune (nouveau
-  // compte), la base la crée automatiquement au premier appareil.
+  // On précise l'installation. Si l'utilisateur n'en a aucune (nouveau compte),
+  // la base la crée automatiquement au premier appareil.
   async function addDevice(name) {
     const { error } = await supabase.from('devices').insert({
       name,

@@ -2,13 +2,16 @@
 // - Administrateur : voit les membres, invite, modifie les permissions, révoque.
 // - Invité : accepte ou refuse les invitations reçues.
 // - Membre : peut quitter une installation partagée avec lui.
-// RAPPEL : la sécurité réelle est dans Supabase (RLS). Cette page ne fait
-// qu'afficher les bons boutons et appeler la base.
+// RAPPEL : la sécurité réelle est dans Supabase (RLS + fonction remove-member).
+// Cette page ne fait qu'afficher les bons boutons et appeler le serveur.
 import { useState, useEffect, useCallback } from 'react';
 import { Users, UserPlus, Trash2, LogOut, Check, X, Mail } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useInstallation } from '../context/InstallationContext';
+// AJOUT : mises à jour en direct (sans recharger la page)
+import { useLiveRefresh } from '../hooks/useLiveRefresh';
+import { useRealtimeRefresh } from '../hooks/useRealtimeRefresh';
 import './Sharing.css';
 
 // Traduit une erreur technique de la base en message compréhensible
@@ -20,6 +23,16 @@ function friendlyError(error) {
   if (error?.code === '42501') return "Vous n'avez pas le droit d'effectuer cette action.";
   if (error?.code === '23505') return 'Cette personne a déjà été invitée.';
   return 'Une erreur est survenue. Réessayez dans un instant.';
+}
+
+// Lit le message d'erreur renvoyé par une fonction Edge (ex. "Mot de passe incorrect.")
+async function readFunctionError(error) {
+  try {
+    const body = await error.context.json();
+    return body?.error || null;
+  } catch {
+    return null;
+  }
 }
 
 // Texte affiché pour chaque permission (les mesures et alertes sont toujours visibles)
@@ -77,49 +90,68 @@ function Sharing() {
   const [inviteDevices, setInviteDevices] = useState(false);
   const [inviting, setInviting] = useState(false);
 
-  // Charge les membres et les invitations envoyées de l'installation sélectionnée
-  const loadAdminData = useCallback(async () => {
-    if (!selectedId) return;
-    setLoadingAdmin(true);
+  // ===== Fenêtre "Retirer l'accès" (avec mot de passe) =====
+  const [removeTarget, setRemoveTarget] = useState(null); // membre à retirer
+  const [removePassword, setRemovePassword] = useState('');
+  const [removeError, setRemoveError] = useState('');
+  const [removing, setRemoving] = useState(false);
 
-    // 1) Les membres (l'administrateur voit toutes les lignes grâce au RLS)
-    const { data: rows } = await supabase
-      .from('installation_members')
-      .select('user_id, role, can_view_history, can_edit_thresholds, can_manage_devices, created_at')
-      .eq('installation_id', selectedId)
-      .order('created_at', { ascending: true });
+  // Charge les membres et les invitations envoyées de l'installation sélectionnée.
+  // silent = true : pas d'écran "Chargement..." (utilisé pour les actualisations automatiques)
+  const loadAdminData = useCallback(
+    async (silent = false) => {
+      if (!selectedId) return;
+      if (!silent) setLoadingAdmin(true);
 
-    const memberRows = rows ?? [];
+      // 1) Les membres (l'administrateur voit toutes les lignes grâce au RLS)
+      const { data: rows } = await supabase
+        .from('installation_members')
+        .select('user_id, role, can_view_history, can_edit_thresholds, can_manage_devices, created_at')
+        .eq('installation_id', selectedId)
+        .order('created_at', { ascending: true });
 
-    // 2) Leur nom et email (table profiles, lisible par l'admin pour ses membres)
-    const ids = memberRows.map((r) => r.user_id);
-    const { data: profiles } = ids.length
-      ? await supabase.from('profiles').select('user_id, full_name, email').in('user_id', ids)
-      : { data: [] };
+      const memberRows = rows ?? [];
 
-    const byUser = new Map((profiles ?? []).map((p) => [p.user_id, p]));
-    setMembers(
-      memberRows.map((r) => ({
-        ...r,
-        full_name: byUser.get(r.user_id)?.full_name || null,
-        email: byUser.get(r.user_id)?.email || null,
-      }))
-    );
+      // 2) Leur nom et email (table profiles, lisible par l'admin pour ses membres)
+      const ids = memberRows.map((r) => r.user_id);
+      const { data: profiles } = ids.length
+        ? await supabase.from('profiles').select('user_id, full_name, email').in('user_id', ids)
+        : { data: [] };
 
-    // 3) Les invitations envoyées, pas encore acceptées
-    const { data: invs } = await supabase
-      .from('installation_invitations')
-      .select('id, email, role, can_view_history, can_edit_thresholds, can_manage_devices, created_at')
-      .eq('installation_id', selectedId)
-      .order('created_at', { ascending: false });
+      const byUser = new Map((profiles ?? []).map((p) => [p.user_id, p]));
+      setMembers(
+        memberRows.map((r) => ({
+          ...r,
+          full_name: byUser.get(r.user_id)?.full_name || null,
+          email: byUser.get(r.user_id)?.email || null,
+        }))
+      );
 
-    setPendingInvites(invs ?? []);
-    setLoadingAdmin(false);
-  }, [selectedId]);
+      // 3) Les invitations envoyées, pas encore acceptées
+      const { data: invs } = await supabase
+        .from('installation_invitations')
+        .select('id, email, role, can_view_history, can_edit_thresholds, can_manage_devices, created_at')
+        .eq('installation_id', selectedId)
+        .order('created_at', { ascending: false });
+
+      setPendingInvites(invs ?? []);
+      setLoadingAdmin(false);
+    },
+    [selectedId]
+  );
 
   useEffect(() => {
     loadAdminData();
   }, [loadAdminData]);
+
+  // AJOUT : mises à jour automatiques de la liste des membres et des invitations
+  useLiveRefresh(() => loadAdminData(true));
+  useRealtimeRefresh(
+    'sharing-page',
+    ['installation_members', 'installation_invitations'],
+    () => loadAdminData(true),
+    !!selectedId
+  );
 
   // ===== ADMIN : inviter une personne par email =====
   async function handleInvite(e) {
@@ -168,11 +200,9 @@ function Sharing() {
     setInviteHistory(true);
     setInviteThresholds(false);
     setInviteDevices(false);
-    setMessage({
-      type: 'ok',
-      text: `Invitation enregistrée. ${clean} la verra en se connectant à Vela avec cette adresse.`,
-    });
-    await loadAdminData();
+    // CHANGEMENT : message plus court
+    setMessage({ type: 'ok', text: 'Invitation envoyée.' });
+    await loadAdminData(true);
   }
 
   // ===== ADMIN : annuler une invitation en attente =====
@@ -188,7 +218,7 @@ function Sharing() {
       setMessage({ type: 'error', text: "Impossible d'annuler cette invitation." });
       return;
     }
-    await loadAdminData();
+    await loadAdminData(true);
   }
 
   // ===== ADMIN : modifier un membre (rôle ou permissions) =====
@@ -212,7 +242,7 @@ function Sharing() {
       });
       return;
     }
-    await loadAdminData();
+    await loadAdminData(true);
   }
 
   // Changement de rôle : membre <-> administrateur
@@ -240,33 +270,52 @@ function Sharing() {
     }
   }
 
-  // ===== ADMIN : révoquer l'accès d'un membre =====
-  async function handleRemoveMember(member) {
+  // ===== ADMIN : fenêtre "Retirer l'accès" =====
+  function openRemoveDialog(member) {
+    setRemoveTarget(member);
+    setRemovePassword('');
+    setRemoveError('');
+  }
+
+  function closeRemoveDialog() {
+    if (removing) return;
+    setRemoveTarget(null);
+    setRemovePassword('');
+    setRemoveError('');
+  }
+
+  // Confirme le retrait : le SERVEUR vérifie le mot de passe et le rôle, puis retire le membre
+  async function handleConfirmRemove(e) {
+    e.preventDefault();
+    if (!removeTarget) return;
+
+    setRemoveError('');
+    setRemoving(true);
+
+    const member = removeTarget;
     const name = member.full_name || member.email || 'cette personne';
-    const confirmed = window.confirm(`Retirer l'accès de ${name} à cette installation ?`);
-    if (!confirmed) return;
 
-    setMessage(null);
-    setSavingId(member.user_id);
+    const { error } = await supabase.functions.invoke('remove-member', {
+      body: {
+        installation_id: selectedId,
+        user_id: member.user_id,
+        password: removePassword,
+      },
+    });
 
-    const { data, error } = await supabase
-      .from('installation_members')
-      .delete()
-      .eq('installation_id', selectedId)
-      .eq('user_id', member.user_id)
-      .select();
+    setRemoving(false);
 
-    setSavingId(null);
-
-    if (error || !data || data.length === 0) {
-      setMessage({
-        type: 'error',
-        text: error ? friendlyError(error) : 'Suppression refusée.',
-      });
+    if (error) {
+      // Le serveur renvoie un message précis (ex. "Mot de passe incorrect.")
+      const serverMessage = await readFunctionError(error);
+      setRemoveError(serverMessage || 'Impossible de retirer ce membre. Réessayez dans un instant.');
       return;
     }
+
+    setRemoveTarget(null);
+    setRemovePassword('');
     setMessage({ type: 'ok', text: `L'accès de ${name} a été retiré.` });
-    await loadAdminData();
+    await loadAdminData(true);
   }
 
   // ===== INVITÉ : accepter une invitation =====
@@ -431,10 +480,11 @@ function Sharing() {
                             <option value="member">Membre</option>
                             <option value="admin">Administrateur</option>
                           </select>
+                          {/* CHANGEMENT : ouvre la fenêtre de confirmation avec mot de passe */}
                           <button
                             className="sharing-btn sharing-btn-danger"
                             disabled={busy}
-                            onClick={() => handleRemoveMember(m)}
+                            onClick={() => openRemoveDialog(m)}
                             title="Retirer l'accès"
                           >
                             <Trash2 size={14} /> Retirer
@@ -603,6 +653,51 @@ function Sharing() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ===== AJOUT : fenêtre de confirmation avec mot de passe pour retirer un membre ===== */}
+      {removeTarget && (
+        <div className="sharing-modal-backdrop" onClick={closeRemoveDialog}>
+          <form
+            className="sharing-modal"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleConfirmRemove}
+          >
+            <h3>Retirer l'accès</h3>
+            <p className="sharing-desc">
+              Pour retirer {removeTarget.full_name || removeTarget.email || 'cette personne'},
+              confirmez avec votre mot de passe.
+            </p>
+
+            <label className="sharing-field">
+              Votre mot de passe
+              <input
+                type="password"
+                value={removePassword}
+                onChange={(e) => setRemovePassword(e.target.value)}
+                autoComplete="current-password"
+                autoFocus
+                required
+              />
+            </label>
+
+            {removeError && <p className="sharing-msg sharing-msg-error">{removeError}</p>}
+
+            <div className="sharing-modal-actions">
+              <button
+                type="button"
+                className="sharing-btn"
+                onClick={closeRemoveDialog}
+                disabled={removing}
+              >
+                Annuler
+              </button>
+              <button type="submit" className="sharing-btn sharing-btn-danger" disabled={removing}>
+                {removing ? 'Vérification...' : "Retirer l'accès"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>
