@@ -2,6 +2,29 @@
 // même quand l'onglet Vela n'est pas ouvert. C'est lui qui reçoit et affiche
 // les notifications push envoyées par le serveur.
 
+// AJOUT : une nouvelle version du service worker s'active tout de suite,
+// sans attendre que toutes les fenêtres de Vela soient fermées
+// (important sur iPhone, où l'application reste en veille au lieu de se fermer)
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+// AJOUT : transforme l'adresse reçue dans la notification en chemin sûr de Vela.
+// Si elle est absente ou pointe ailleurs (autre site), on utilise l'adresse de secours.
+function safePath(rawUrl, fallback) {
+  try {
+    const url = new URL(rawUrl || fallback, self.location.origin);
+    if (url.origin !== self.location.origin) return fallback;
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return fallback;
+  }
+}
+
 // Écoute l'événement "push" : déclenché quand une notification arrive
 self.addEventListener('push', (event) => {
   // Lecture sécurisée du contenu (si le message est mal formé, on utilise des valeurs par défaut)
@@ -26,7 +49,8 @@ self.addEventListener('push', (event) => {
     icon: isFaq ? '/notif-faq.png' : '/notif-alert.png',
     badge: '/notif-badge.png',
     // Page à ouvrir au clic : la FAQ pour une réponse, les alertes sinon
-    data: { url: data.url || (isFaq ? '/faq' : '/alerts') },
+    // CHANGEMENT : l'adresse est vérifiée (safePath) ; l'adresse de secours dépend du type
+    data: { url: safePath(data.url, isFaq ? '/faq' : '/alerts') },
   };
 
   // Les réponses FAQ se remplacent entre elles (pas de pile de notifications identiques)
@@ -44,21 +68,28 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const url = (event.notification.data && event.notification.data.url) || '/alerts';
+  const path = safePath(event.notification.data && event.notification.data.url, '/alerts');
 
   event.waitUntil(
-    clients
-      .matchAll({ type: 'window', includeUncontrolled: true })
-      .then((windowClients) => {
-        // Si Vela est déjà ouvert : on le ramène au premier plan sur la bonne page
-        for (const client of windowClients) {
-          if ('navigate' in client && 'focus' in client) {
-            return client.navigate(url).then((c) => (c ? c.focus() : undefined));
-          }
+    (async () => {
+      const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+
+      // Si Vela est déjà ouvert (au premier plan ou en veille) :
+      // on le ramène devant et on lui envoie un message "va sur cette page".
+      // CHANGEMENT : plus de client.navigate(), mal géré sur iPhone
+      if (windowClients.length > 0) {
+        const client = windowClients[0];
+        try {
+          await client.focus();
+        } catch {
+          // Si le focus est refusé, on continue quand même avec le message
         }
-        // Sinon on ouvre une nouvelle fenêtre
-        return clients.openWindow(url);
-      })
-      .catch(() => clients.openWindow(url))
+        client.postMessage({ type: 'vela-navigate', url: path });
+        return;
+      }
+
+      // Sinon (application fermée), on ouvre une nouvelle fenêtre directement sur la bonne page
+      await clients.openWindow(new URL(path, self.location.origin).href);
+    })().catch(() => clients.openWindow(path))
   );
 });

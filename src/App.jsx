@@ -5,6 +5,8 @@ import Router from './routes/Router';
 import Sidebar from './components/Sidebar/Sidebar';
 import Navbar from './components/Navbar/Navbar';
 import SplashScreen from './components/SplashScreen/SplashScreen';
+// AJOUT : écoute les clics sur les notifications quand Vela est déjà ouvert
+import PushNavigationListener from './components/PushNavigationListener/PushNavigationListener';
 // AJOUT 1 : useAuth, pour savoir si l'utilisateur est déjà connecté
 import { AuthProvider, useAuth } from './context/AuthContext';
 // AJOUT 3 : contexte des installations (rôle et permissions de l'utilisateur)
@@ -87,9 +89,11 @@ function App() {
       <SplashScreen />
 
       <AuthProvider>
-        {/* AJOUT 3 : doit être DANS AuthProvider, car il a besoin de l'utilisateur connecté */}
+        {/* Doit être DANS AuthProvider, car il a besoin de l'utilisateur connecté */}
         <InstallationProvider>
           <BrowserRouter>
+            {/* AJOUT : écoute les messages du service worker (clic sur une notification) */}
+            <PushNavigationListener />
             <AppLayout />
           </BrowserRouter>
         </InstallationProvider>
