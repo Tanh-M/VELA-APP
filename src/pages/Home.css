@@ -1,12 +1,27 @@
+/* =====================================================================
+   Page d'accueil
+   Les fonds sombres (bleu et rouge) sont accordés aux couleurs des images.
+   Le reste de la page utilise les variables du thème (clair / sombre).
+   ===================================================================== */
 .home-page {
-  max-width: 100%;
+  --home-blue: #07297a;
+  --home-blue-deep: #0a3270;
+  --home-on-dark: #f4f7ff;
+  --home-on-dark-muted: #c4d0f5;
+  --home-red-deep: #1c0305;
+  --home-red: #ff5a47;
+
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 1.25rem 3rem;
 }
 
+/* ===== En-tête ===== */
 .home-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 0 2rem;
+  padding: 1rem 0 1.5rem;
 }
 
 .home-logo {
@@ -22,12 +37,6 @@
   width: 26px;
   height: 26px;
   border-radius: 7px;
-}
-
-.logo-icon-large {
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
 }
 
 .home-header-actions {
@@ -80,120 +89,476 @@
   gap: 6px;
 }
 
-.home-hero {
-  position: relative;
-  text-align: center;
-  padding: 3.5rem 1rem 4rem;
-  max-width: 640px;
-  margin: 0 auto;
-  border-radius: 24px;
-  background: radial-gradient(circle at 50% 0%, rgba(24, 95, 165, 0.10), transparent 65%);
-}
-
-.home-hero-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1.25rem;
-}
-
-.home-hero h1 {
-  font-size: 2.1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 1rem;
-  line-height: 1.25;
-}
-
-.home-hero p {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  margin-bottom: 1.75rem;
-  line-height: 1.5;
-}
-
 .home-cta-large {
-  padding: 12px 28px;
+  padding: 13px 28px;
   font-size: 0.95rem;
   display: inline-block;
 }
 
+/* Contour visible quand on navigue au clavier */
+.home-page a:focus-visible,
+.home-page button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ===== Mouvements (une seule fois, à l'ouverture de la page) ===== */
+@keyframes home-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes home-image-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes home-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* ===== 1. Haut de page ===== */
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: 2rem;
+  padding: 3rem 3rem 3rem 3.5rem;
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at 85% 50%, rgba(92, 200, 255, 0.18), transparent 60%),
+    var(--home-blue);
+  color: var(--home-on-dark);
+  overflow: hidden;
+}
+
+/* Le texte apparaît ligne par ligne */
+.home-hero-copy > * {
+  animation: home-rise 0.7s ease-out both;
+}
+.home-hero-copy > *:nth-child(1) { animation-delay: 0.05s; }
+.home-hero-copy > *:nth-child(2) { animation-delay: 0.15s; }
+.home-hero-copy > *:nth-child(3) { animation-delay: 0.25s; }
+.home-hero-copy > *:nth-child(4) { animation-delay: 0.35s; }
+.home-hero-copy > *:nth-child(5) { animation-delay: 0.45s; }
+
+.home-hero-copy h1 {
+  font-size: clamp(2rem, 4.4vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin: 0 0 1.1rem;
+}
+
+.home-hero-lead {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--home-on-dark-muted);
+  max-width: 46ch;
+  margin: 0 0 1.75rem;
+}
+
+.home-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+/* Sur le fond bleu, le bouton principal est blanc (meilleur contraste) */
+.home-hero .home-cta-btn {
+  background-color: #fff;
+  color: var(--home-blue);
+}
+
+.home-hero .home-cta-btn:hover {
+  box-shadow: 0 8px 24px rgba(92, 200, 255, 0.35);
+}
+
+.home-hero-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--home-on-dark);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.home-hero a:focus-visible,
+.home-hero button:focus-visible,
+.home-alert a:focus-visible {
+  outline-color: #fff;
+}
+
 .home-hero-note {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
+  color: var(--home-on-dark-muted);
+  margin: 0.9rem 0 0;
+}
+
+/* Pastilles des capteurs surveillés */
+.home-sensors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 1.75rem 0 0;
+  padding: 0;
+}
+
+.home-sensors li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  font-size: 0.8rem;
+  color: var(--home-on-dark);
+}
+
+/* Image du haut de page : cadre arrondi, léger flottement */
+.home-hero-visual {
+  display: flex;
+  justify-content: center;
+}
+
+.home-hero-float {
+  animation: home-float 7s ease-in-out 1.2s infinite;
+}
+
+.home-hero-image {
+  display: block;
+  width: min(100%, 380px);
+  height: auto;
+  aspect-ratio: 853 / 1280;
+  object-fit: cover;
+  border-radius: 26px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 24px 70px rgba(0, 10, 60, 0.55),
+    0 0 80px rgba(92, 200, 255, 0.22);
+  animation: home-image-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
+}
+
+/* ===== Sections suivantes ===== */
+.home-section {
+  margin-top: 5rem;
+}
+
+.home-section h2 {
+  font-size: clamp(1.5rem, 2.8vw, 2.1rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.home-section-lead {
+  font-size: 1rem;
+  line-height: 1.5;
   color: var(--text-secondary);
-  opacity: 0.75;
-  margin: 0.85rem 0 0;
+  margin: 0.75rem 0 0;
+  max-width: 52ch;
+}
+
+/* ===== 2. Du détecteur à votre téléphone ===== */
+.home-how {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 3.5rem;
+  align-items: center;
+  scroll-margin-top: 1.5rem;
+}
+
+/* Le cadre sombre garde l'image belle en mode clair comme en mode sombre */
+.home-how-frame {
+  display: flex;
+  justify-content: center;
+  padding: 1.25rem;
+  border-radius: 28px;
+  background: var(--home-blue-deep);
+}
+
+.home-how-frame img {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  aspect-ratio: 853 / 1280;
+  object-fit: cover;
+  border-radius: 20px;
+}
+
+.home-steps {
+  list-style: none;
+  margin: 1.75rem 0 0;
+  padding: 0;
+}
+
+.home-steps li {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.home-step-num {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.home-steps h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0.25rem 0 0.25rem;
+}
+
+.home-steps p {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 52ch;
+}
+
+/* ===== 3. Section alerte (le moment fort) ===== */
+.home-alert {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  min-height: 500px;
+  background: var(--home-red-deep);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-alert-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 45%;
+  opacity: 0.6;
+}
+
+/* Voile sombre : garde le texte lisible, laisse le triangle rougeoyer derrière */
+.home-alert-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(28, 3, 5, 0.35), rgba(28, 3, 5, 0.88));
+}
+
+.home-alert-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.1rem;
+  padding: 4rem 1.5rem;
+  max-width: 640px;
+}
+
+.home-section .home-alert-content h2 {
+  color: #fff;
+}
+
+.home-alert-content > p {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: #ffd9d4;
+  max-width: 52ch;
+}
+
+/* Fausse notification : invisible au départ, elle arrive quand la section est à l'écran */
+.home-notif {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  max-width: 440px;
+  margin-top: 0.75rem;
+  padding: 14px 16px;
+  text-align: left;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+}
+
+.home-notif .logo-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.home-notif-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.home-notif-body {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #ffe6e2;
+  margin-top: 3px;
+}
+
+/* Anneau rouge qui pulse trois fois autour de la notification */
+.home-notif::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 21px;
+  border: 2px solid var(--home-red);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes home-notif-in {
+  from { opacity: 0; transform: translateY(28px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes home-ring {
+  0% { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+
+.home-notif-in {
+  animation: home-notif-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.home-notif-in::before {
+  animation: home-ring 1.5s ease-out 0.6s 3;
+}
+
+.home-notif-caption {
+  font-size: 0.75rem;
+  color: #ffb4aa;
+}
+
+/* ===== 4. Atouts ===== */
+.home-features-title {
+  margin-bottom: 2rem;
 }
 
 .home-features {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  padding-bottom: 3rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem 2.5rem;
 }
 
-.feature-card {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.25rem;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+.home-feature {
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border);
 }
 
-.feature-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--accent);
-}
-
-.feature-icon-wrap {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background-color: var(--bg-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.6rem;
-}
-
-.feature-card h3 {
-  font-size: 0.95rem;
+.home-feature h3 {
+  font-size: 0.98rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin: 0.2rem 0 0.4rem;
+  margin: 0.7rem 0 0.35rem;
 }
 
-.feature-card p {
-  font-size: 0.82rem;
+.home-feature p {
+  font-size: 0.85rem;
+  line-height: 1.5;
   color: var(--text-secondary);
-  line-height: 1.4;
+  max-width: 40ch;
+}
+
+/* ===== 5. Appel final ===== */
+.home-final {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.home-final-note {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.home-final-note a {
+  color: var(--accent);
 }
 
 /* ===== Responsive : tablette ===== */
 @media (max-width: 900px) {
+  .home-hero {
+    grid-template-columns: 1fr;
+    padding: 2rem 1.75rem 2.25rem;
+    gap: 1.75rem;
+  }
+
+  /* Sur tablette et mobile, l'image passe au-dessus du texte */
+  .home-hero-visual {
+    order: -1;
+  }
+
+  .home-hero-image {
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 16 / 11;
+    object-position: 50% 45%;
+  }
+
+  .home-how {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .home-how-frame {
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
   .home-features {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-section {
+    margin-top: 3.5rem;
   }
 }
 
 /* ===== Responsive : mobile ===== */
 @media (max-width: 600px) {
-  /* Padding horizontal général, pour que rien ne touche les bords de l'écran */
   .home-page {
-    padding: 0 1rem;
+    padding: 0 1rem 2.5rem;
   }
 
   .home-header {
-    padding: 1rem 0 1.5rem;
+    padding: 1rem 0 1.25rem;
   }
 
-  /* Sur très petit écran, le bouton FAQ + Mon espace peuvent devenir serrés :
-     on réduit légèrement leur taille plutôt que de les faire passer à la ligne */
+  /* Sur très petit écran, on réduit légèrement les boutons de l'en-tête
+     plutôt que de les faire passer à la ligne */
   .home-faq-btn {
     padding: 7px 12px;
     font-size: 0.75rem;
@@ -204,33 +569,63 @@
     font-size: 0.78rem;
   }
 
+  /* Garde juste l'icône, cache le texte "Vela" pour gagner de la place */
   .home-logo span {
-    display: none; /* garde juste l'icône sur mobile, cache le texte "Vela" pour gagner de la place */
+    display: none;
   }
 
-  /* Titre nettement plus petit sur mobile, pour ne plus prendre 3 lignes entières */
   .home-hero {
-    padding: 2.5rem 0.5rem 3rem;
+    padding: 1.25rem 1.25rem 1.75rem;
+    border-radius: 22px;
   }
 
-  .home-hero h1 {
-    font-size: 1.5rem;
-    line-height: 1.3;
+  .home-hero-copy h1 {
+    font-size: 1.75rem;
   }
 
-  .home-hero p {
-    font-size: 0.9rem;
+  .home-hero-lead {
+    font-size: 0.95rem;
   }
 
   .home-cta-large {
     width: 100%;
+    text-align: center;
     padding: 13px 20px;
   }
 
-  /* Une seule colonne sur mobile, plus de place pour respirer, comme sur les
-     autres grilles de l'app (sensor-grid, etc.) */
+  .home-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.9rem;
+    text-align: center;
+  }
+
+  .home-alert {
+    border-radius: 22px;
+    min-height: 460px;
+  }
+
+  .home-alert-content {
+    padding: 3rem 1.1rem;
+  }
+
   .home-features {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 1.5rem;
+  }
+}
+
+/* ===== Personnes qui ont réduit les animations sur leur appareil ===== */
+@media (prefers-reduced-motion: reduce) {
+  .home-page *,
+  .home-page *::before,
+  .home-page *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* La notification est alors visible tout de suite */
+  .home-notif {
+    opacity: 1;
   }
 }
