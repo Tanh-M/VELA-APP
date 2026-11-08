@@ -3,9 +3,11 @@ import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
 // Pour savoir dans quelle installation ajouter un appareil
 import { useInstallation } from '../context/InstallationContext';
-// AJOUT : mises à jour en direct (sans recharger la page)
+// Mises à jour en direct (sans recharger la page)
 import { useLiveRefresh } from './useLiveRefresh';
 import { useRealtimeRefresh } from './useRealtimeRefresh';
+// AJOUT : mémorise les appareils pour les afficher hors connexion
+import { usePersistentState } from './usePersistentState';
 
 // Compare deux listes : évite de rafraîchir l'écran quand rien n'a changé
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -15,13 +17,16 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 export function useDevices() {
   const { currentUser } = useAuth();
   const { defaultInstallationId, refreshMemberships } = useInstallation();
-  const [devices, setDevices] = useState([]);
+
+  // CHANGEMENT : la liste des appareils est mémorisée sur l'appareil
+  const [devices, setDevices] = usePersistentState('devices', []);
   const [loading, setLoading] = useState(true);
 
   // Récupère depuis Supabase la liste des appareils accessibles à l'utilisateur
   // (la sécurité RLS filtre automatiquement : on ne reçoit que ceux de ses installations).
   // "Chargement..." ne s'affiche qu'au premier chargement, pas à chaque rafraîchissement,
   // pour éviter que la liste disparaisse un instant après une modification.
+  // Hors connexion, la requête échoue : on garde alors la liste mémorisée.
   async function fetchDevices() {
     if (!currentUser) {
       setLoading(false);
@@ -33,7 +38,7 @@ export function useDevices() {
       .select('*')
       .order('created_at', { ascending: false });
 
-    // CHANGEMENT : on ne remplace la liste que si elle a vraiment changé
+    // On ne remplace la liste que si elle a vraiment changé
     if (!error) setDevices((prev) => (same(prev, data) ? prev : data));
     setLoading(false);
   }
@@ -43,7 +48,7 @@ export function useDevices() {
     fetchDevices();
   }, [currentUser]);
 
-  // AJOUT : mises à jour automatiques
+  // Mises à jour automatiques
   // - ajout ou modification d'un appareil : immédiat (Realtime)
   // - toutes les 20 secondes et au retour de l'application au premier plan (suppressions)
   useLiveRefresh(fetchDevices);

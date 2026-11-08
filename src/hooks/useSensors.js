@@ -1,11 +1,13 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
+// AJOUT : mémorise la dernière mesure pour l'afficher hors connexion
+import { usePersistentState } from './usePersistentState';
 
 export function useSensor(deviceId) {
   const { currentUser } = useAuth();
-  const [reading, setReading] = useState(null);
+  // CHANGEMENT : la dernière mesure est mémorisée sur l'appareil
+  const [reading, setReading] = usePersistentState(`reading:${deviceId}`, null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -25,7 +27,9 @@ export function useSensor(deviceId) {
       .maybeSingle();
 
     if (fetchError) {
-      setError(fetchError.message);
+      // CHANGEMENT : hors connexion, pas de message d'erreur (le bandeau l'explique)
+      // et la dernière mesure mémorisée reste affichée
+      if (navigator.onLine) setError(fetchError.message);
     } else {
       setError(null);
       setReading(data);

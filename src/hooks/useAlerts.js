@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
+// AJOUT : mémorise les alertes pour les afficher hors connexion
+import { usePersistentState } from './usePersistentState';
 
 // Hook : alertes réelles auxquelles l'utilisateur a accès.
 // - "alerts" : les événements d'alerte (moyen / critique) des 7 derniers jours
@@ -9,8 +11,9 @@ import { useAuth } from '../context/AuthContext';
 // les alertes des installations de l'utilisateur.
 export function useAlerts() {
   const { currentUser } = useAuth();
-  const [alerts, setAlerts] = useState([]);
-  const [active, setActive] = useState([]);
+  // CHANGEMENT : les deux listes sont mémorisées sur l'appareil
+  const [alerts, setAlerts] = usePersistentState('alerts', []);
+  const [active, setActive] = usePersistentState('active-alerts', []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -38,7 +41,9 @@ export function useAlerts() {
     ]);
 
     if (eventsResult.error || activeResult.error) {
-      setError((eventsResult.error || activeResult.error).message);
+      // CHANGEMENT : hors connexion, pas de message d'erreur (le bandeau l'explique)
+      // et les dernières alertes mémorisées restent affichées
+      if (navigator.onLine) setError((eventsResult.error || activeResult.error).message);
     } else {
       setError(null);
       setAlerts(eventsResult.data ?? []);

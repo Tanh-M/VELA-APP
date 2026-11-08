@@ -6,9 +6,11 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from './AuthContext';
-// AJOUT : mises à jour en direct (sans recharger la page)
+// Mises à jour en direct (sans recharger la page)
 import { useLiveRefresh } from '../hooks/useLiveRefresh';
 import { useRealtimeRefresh } from '../hooks/useRealtimeRefresh';
+// AJOUT : mémorise les droits pour les afficher hors connexion
+import { usePersistentState } from '../hooks/usePersistentState';
 
 const InstallationContext = createContext();
 
@@ -20,11 +22,13 @@ export function InstallationProvider({ children }) {
 
   // Liste des accès de l'utilisateur : une ligne par installation
   // { installation_id, role, can_view_history, can_edit_thresholds, can_manage_devices, installations: { id, name } }
-  const [memberships, setMemberships] = useState([]);
+  // CHANGEMENT : mémorisée sur l'appareil, pour fonctionner hors connexion
+  const [memberships, setMemberships] = usePersistentState('memberships', []);
   const [loading, setLoading] = useState(true);
 
   // Invitations reçues par l'utilisateur (en attente de réponse)
-  const [invitations, setInvitations] = useState([]);
+  // CHANGEMENT : mémorisées sur l'appareil, elles aussi
+  const [invitations, setInvitations] = usePersistentState('invitations', []);
 
   // Récupère les accès de l'utilisateur connecté (la sécurité RLS ne renvoie que ses propres lignes)
   const fetchMemberships = useCallback(async () => {
@@ -42,6 +46,7 @@ export function InstallationProvider({ children }) {
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: true });
 
+    // Hors connexion, la requête échoue : on garde alors les droits mémorisés
     if (!error) {
       const next = data ?? [];
       setMemberships((prev) => (same(prev, next) ? prev : next));
@@ -73,7 +78,7 @@ export function InstallationProvider({ children }) {
     fetchInvitations();
   }, [fetchInvitations]);
 
-  // AJOUT : mises à jour automatiques
+  // Mises à jour automatiques
   // - à l'arrivée d'une invitation ou d'un changement de droits : immédiat (Realtime)
   // - toutes les 20 secondes et au retour de l'application au premier plan (retraits d'accès)
   function refreshAll() {

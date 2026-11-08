@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
+// AJOUT : mémorise le graphe pour l'afficher hors connexion
+import { usePersistentState } from './usePersistentState';
 
 // Hook : relevés des 24 dernières heures d'UN appareil, prêts pour Chart.jsx
 export function useReadings24h(deviceId) {
   const { currentUser } = useAuth();
-  const [data, setData] = useState([]);
+  // CHANGEMENT : les points du graphe sont mémorisés sur l'appareil
+  const [data, setData] = usePersistentState(`chart24:${deviceId}`, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -29,7 +32,9 @@ export function useReadings24h(deviceId) {
       .limit(1000);
 
     if (fetchError) {
-      setError(fetchError.message);
+      // CHANGEMENT : hors connexion, pas de message d'erreur (le bandeau l'explique)
+      // et le dernier graphe mémorisé reste affiché
+      if (navigator.onLine) setError(fetchError.message);
       setLoading(false);
       return;
     }

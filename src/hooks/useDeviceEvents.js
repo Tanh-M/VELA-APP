@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
+// AJOUT : mémorise l'historique pour l'afficher hors connexion
+import { usePersistentState } from './usePersistentState';
 
 // Hook 1 : historique d'UN appareil (événements réels, du plus récent au plus ancien).
 // La sécurité RLS de Supabase filtre automatiquement : sans le droit
 // "Voir l'historique", seules les alertes des 7 derniers jours sont renvoyées.
 export function useDeviceEvents(deviceId) {
   const { currentUser } = useAuth();
-  const [events, setEvents] = useState([]);
+  // CHANGEMENT : l'historique est mémorisé sur l'appareil
+  const [events, setEvents] = usePersistentState(`events:${deviceId}`, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -26,7 +29,9 @@ export function useDeviceEvents(deviceId) {
       .limit(500);
 
     if (fetchError) {
-      setError(fetchError.message);
+      // CHANGEMENT : hors connexion, pas de message d'erreur (le bandeau l'explique)
+      // et l'historique mémorisé reste affiché
+      if (navigator.onLine) setError(fetchError.message);
     } else {
       setError(null);
       setEvents(data ?? []);
@@ -49,10 +54,12 @@ export function useDeviceEvents(deviceId) {
 // Hook 2 : derniers événements de PLUSIEURS appareils (pour le Tableau de bord)
 export function useRecentEvents(deviceIds, limit = 6) {
   const { currentUser } = useAuth();
-  const [events, setEvents] = useState([]);
 
   // On transforme la liste en texte pour ne recharger que si elle change vraiment
   const key = deviceIds.join(',');
+
+  // CHANGEMENT : les derniers événements sont mémorisés sur l'appareil
+  const [events, setEvents] = usePersistentState(`recent-events:${key}`, []);
 
   const fetchEvents = useCallback(async () => {
     if (!currentUser || !key) {
@@ -79,4 +86,4 @@ export function useRecentEvents(deviceIds, limit = 6) {
   }, [fetchEvents]);
 
   return { events };
-}   
+}
