@@ -1,0 +1,26 @@
+/* Bandeau "Hors connexion" : fixé en bas de l'écran, au-dessus du contenu */
+.offline-banner {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: calc(100% - 24px);
+  max-width: 560px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background-color: #FEF3C7;
+  border: 1px solid #F5D77A;
+  color: #78350F;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+
+.offline-banner svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}

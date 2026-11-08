@@ -5,11 +5,13 @@ import Router from './routes/Router';
 import Sidebar from './components/Sidebar/Sidebar';
 import Navbar from './components/Navbar/Navbar';
 import SplashScreen from './components/SplashScreen/SplashScreen';
-// AJOUT : écoute les clics sur les notifications quand Vela est déjà ouvert
+// Écoute les clics sur les notifications quand Vela est déjà ouvert
 import PushNavigationListener from './components/PushNavigationListener/PushNavigationListener';
-// AJOUT 1 : useAuth, pour savoir si l'utilisateur est déjà connecté
+// AJOUT : bandeau affiché quand l'appareil n'a plus de connexion
+import OfflineBanner from './components/OfflineBanner/OfflineBanner';
+// useAuth, pour savoir si l'utilisateur est déjà connecté
 import { AuthProvider, useAuth } from './context/AuthContext';
-// AJOUT 3 : contexte des installations (rôle et permissions de l'utilisateur)
+// Contexte des installations (rôle et permissions de l'utilisateur)
 import { InstallationProvider } from './context/InstallationContext';
 import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
@@ -33,7 +35,7 @@ function AppLayout() {
   const location = useLocation();
   const isPublicPage = PUBLIC_ROUTES.includes(location.pathname);
 
-  // AJOUT 2 : à l'OUVERTURE de l'application, un utilisateur déjà connecté arrive
+  // À l'OUVERTURE de l'application, un utilisateur déjà connecté arrive
   // directement sur son tableau de bord (comme la liste des discussions sur WhatsApp).
   // Cela ne se produit qu'une seule fois : ensuite, le lien "Accueil" du menu
   // continue de mener à la page d'accueil normalement.
@@ -62,23 +64,29 @@ function AppLayout() {
   // Page publique : uniquement le contenu de la page
   if (isPublicPage) {
     return (
-      <main className="app-page-public">
-        <Router />
-      </main>
+      <>
+        <main className="app-page-public">
+          <Router />
+        </main>
+        <OfflineBanner />
+      </>
     );
   }
 
   // Page interne : Sidebar + Navbar + contenu
   return (
-    <div className="app-layout">
-      <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-      <div className="app-content">
-        <Navbar onMenuClick={toggleSidebar} />
-        <main className="app-page">
-          <Router />
-        </main>
+    <>
+      <div className="app-layout">
+        <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+        <div className="app-content">
+          <Navbar onMenuClick={toggleSidebar} />
+          <main className="app-page">
+            <Router />
+          </main>
+        </div>
       </div>
-    </div>
+      <OfflineBanner />
+    </>
   );
 }
 
@@ -92,7 +100,7 @@ function App() {
         {/* Doit être DANS AuthProvider, car il a besoin de l'utilisateur connecté */}
         <InstallationProvider>
           <BrowserRouter>
-            {/* AJOUT : écoute les messages du service worker (clic sur une notification) */}
+            {/* Écoute les messages du service worker (clic sur une notification) */}
             <PushNavigationListener />
             <AppLayout />
           </BrowserRouter>

@@ -1,7 +1,26 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
+// AJOUT : efface les données mémorisées pour le mode hors connexion
+import { clearOfflineCache } from '../utils/offlineCache';
 
 const AuthContext = createContext();
+
+// AJOUT : relit l'utilisateur mémorisé par Supabase sur l'appareil.
+// Sert hors connexion, quand le jeton est expiré et ne peut pas être renouvelé.
+function readStoredUser() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const stored = JSON.parse(localStorage.getItem(key));
+        return stored?.user ?? null;
+      }
+    }
+  } catch {
+    // ignoré
+  }
+  return null;
+}
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -10,12 +29,26 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setCurrentUser(session?.user ?? null);
-      setIsAuthenticated(!!session);
+      if (session) {
+        setCurrentUser(session.user);
+        setIsAuthenticated(true);
+      } else if (!navigator.onLine) {
+        // CHANGEMENT : hors connexion, on garde l'utilisateur mémorisé sur l'appareil
+        const storedUser = readStoredUser();
+        setCurrentUser(storedUser);
+        setIsAuthenticated(!!storedUser);
+      } else {
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+      }
       setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      // CHANGEMENT : hors connexion, une session absente ne veut pas dire "déconnecté"
+      // (le jeton ne peut simplement pas être renouvelé). Seule une vraie déconnexion compte.
+      if (!session && event !== 'SIGNED_OUT' && !navigator.onLine) return;
+
       setCurrentUser(session?.user ?? null);
       setIsAuthenticated(!!session);
     });
@@ -38,7 +71,10 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    await supabase.auth.signOut();
+    // Hors connexion, la déconnexion se fait seulement sur cet appareil
+    await supabase.auth.signOut({ scope: navigator.onLine ? 'global' : 'local' });
+    // Efface les dernières données mémorisées pour le mode hors connexion
+    clearOfflineCache();
   }
 
   return (
