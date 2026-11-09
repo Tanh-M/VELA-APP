@@ -7,6 +7,8 @@ import { useDevices } from '../hooks/useDevices';
 import { useSensor } from '../hooks/useSensors';
 // AJOUT : rôle et permissions de l'utilisateur
 import { useInstallation } from '../context/InstallationContext';
+// AJOUT : génération du jeton secret du détecteur
+import { generateDeviceToken } from '../utils/deviceToken';
 import './Devices.css';
 
 // Indique si un appareil possède au moins un seuil personnalisé
@@ -64,6 +66,9 @@ function Devices() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [editingDevice, setEditingDevice] = useState(null);
 
+  // AJOUT : jeton du détecteur qui vient d'être créé (affiché une seule fois)
+  const [createdToken, setCreatedToken] = useState(null);
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Outil de navigation vers d'autres pages (détail, historique)
@@ -86,6 +91,7 @@ function Devices() {
   }, [searchParams, devices, setSearchParams, can]);
 
   // Ajoute un détecteur
+  // CHANGEMENT : génère un jeton, n'enregistre que son empreinte, puis affiche le jeton
   async function handleAddDevice(e) {
     e.preventDefault();
 
@@ -94,14 +100,21 @@ function Devices() {
     setIsSubmitting(true);
 
     try {
-      await addDevice(newName.trim());
+      const { token, tokenHash } = await generateDeviceToken();
+      await addDevice(newName.trim(), tokenHash);
+      setCreatedToken(token); // la fenêtre passe à l'écran « jeton »
       setNewName('');
-      setShowForm(false);
     } catch (err) {
       alert("Erreur lors de l'ajout : " + err.message);
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  // AJOUT : ferme la fenêtre d'ajout (le jeton disparaît pour toujours)
+  function closeForm() {
+    setShowForm(false);
+    setCreatedToken(null);
   }
 
   // Supprime un détecteur après confirmation
@@ -147,44 +160,74 @@ function Devices() {
       {showForm && (
         <div
           className="device-form-backdrop"
-          onClick={() => setShowForm(false)}
+          // Sur l'écran du jeton, on ne ferme pas par un clic à côté (pour ne pas le perdre)
+          onClick={createdToken ? undefined : closeForm}
         >
-          <form
-            className="device-form"
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={handleAddDevice}
-          >
-            <div className="device-form-header">
-              <h3>Nouveau détecteur</h3>
+          {createdToken ? (
+            // Écran « jeton » : à copier dans le code de l'ESP32
+            <div className="device-form" onClick={(e) => e.stopPropagation()}>
+              <div className="device-form-header">
+                <h3>Détecteur créé</h3>
+              </div>
+
+              <p className="device-token-help">
+                Copiez ce jeton dans le code de votre ESP32. Il ne sera
+                <strong> plus jamais affiché</strong>.
+              </p>
+
+              <code className="device-token">{createdToken}</code>
 
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                className="auth-submit-btn"
+                onClick={() => navigator.clipboard.writeText(createdToken)}
               >
-                <X size={18} />
+                Copier le jeton
+              </button>
+
+              <button
+                type="button"
+                className="device-token-done"
+                onClick={closeForm}
+              >
+                J'ai copié le jeton, terminer
               </button>
             </div>
-
-            <label>
-              Nom / emplacement
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Ex : Garage, Cuisine..."
-                required
-                autoFocus
-              />
-            </label>
-
-            <button
-              type="submit"
-              className="auth-submit-btn"
-              disabled={isSubmitting}
+          ) : (
+            <form
+              className="device-form"
+              onClick={(e) => e.stopPropagation()}
+              onSubmit={handleAddDevice}
             >
-              {isSubmitting ? 'Ajout...' : 'Ajouter'}
-            </button>
-          </form>
+              <div className="device-form-header">
+                <h3>Nouveau détecteur</h3>
+
+                <button type="button" onClick={closeForm}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <label>
+                Nom / emplacement
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Ex : Garage, Cuisine..."
+                  required
+                  autoFocus
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="auth-submit-btn"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Ajout...' : 'Ajouter'}
+              </button>
+            </form>
+          )}
         </div>
       )}
 

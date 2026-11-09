@@ -99,6 +99,36 @@
   color: var(--text-primary);
 }
 
+/* ===== Écran du jeton (affiché une seule fois après la création) ===== */
+.device-token-help {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.device-token {
+  display: block;
+  word-break: break-all;
+  font-size: 0.8rem;
+  padding: 10px 12px;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.device-token-done {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
 /* ===== Messages d'état (chargement, aucun appareil) ===== */
 .no-devices,
 .devices-loading {

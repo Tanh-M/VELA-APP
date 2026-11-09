@@ -56,13 +56,16 @@ export function useDevices() {
 
   // Ajoute un appareil. is_online démarre à false : il ne passera "en ligne"
   // que lorsque le système embarqué enverra un premier relevé.
+  // CHANGEMENT : reçoit aussi tokenHash (empreinte du jeton du détecteur).
+  // Seule l'empreinte est stockée : le jeton lui-même n'est jamais enregistré.
   // On précise l'installation. Si l'utilisateur n'en a aucune (nouveau compte),
   // la base la crée automatiquement au premier appareil.
-  async function addDevice(name) {
+  async function addDevice(name, tokenHash) {
     const { error } = await supabase.from('devices').insert({
       name,
       user_id: currentUser.id,
       is_online: false,
+      token_hash: tokenHash,
       ...(defaultInstallationId ? { installation_id: defaultInstallationId } : {}),
     });
 
