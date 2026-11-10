@@ -1,351 +1,594 @@
 /* =====================================================================
-   Page d'accueil
-   Les fonds sombres (bleu et rouge) sont accordés aux couleurs des images.
-   Le reste de la page utilise les variables du thème (clair / sombre).
+   VELA — Landing Page
+   Design System: OKLCH tokens, custom easings, fluid typography,
+   asymmetric rhythm, purposeful motion.
    ===================================================================== */
-.home-page {
-  --home-blue: #07297a;
-  --home-blue-deep: #0a3270;
-  --home-on-dark: #f4f7ff;
-  --home-on-dark-muted: #c4d0f5;
-  --home-red-deep: #1c0305;
-  --home-red: #ff5a47;
 
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 0 1.25rem 3rem;
+/* ---- Fonts: General Sans (display) + Public Sans (body) ----
+   Not on reflex-reject list. Geometric but warm, distinctive but readable.
+   Loaded via @import for simplicity; replace with self-hosted in production. */
+@import url('https://fonts.googleapis.com/css2?family=General+Sans:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap');
+
+/* ---- Design Tokens (OKLCH) ---- */
+:root {
+  /* Typography */
+  --font-display: 'General Sans', system-ui, sans-serif;
+  --font-body: 'Public Sans', system-ui, sans-serif;
+  /* Brand Blue — trustworthy, calm, protective */
+  --color-blue: oklch(0.42 0.14 258);
+  --color-blue-weak: oklch(0.88 0.04 258 / 0.6);
+  --color-blue-strong: oklch(0.35 0.16 258);
+  --color-blue-surface: oklch(0.96 0.02 258);
+
+  /* Alert Red — urgent but not alarming */
+  --color-red: oklch(0.52 0.20 25);
+  --color-red-weak: oklch(0.88 0.06 25 / 0.5);
+  --color-red-strong: oklch(0.45 0.22 25);
+  --color-red-surface: oklch(0.96 0.02 25);
+
+  /* Neutrals — tinted toward brand blue */
+  --color-bg: oklch(0.99 0.003 258);
+  --color-surface: oklch(1 0 0);
+  --color-surface-elevated: oklch(1 0 0);
+  --color-fg: oklch(0.16 0.008 258);
+  --color-fg-muted: oklch(0.42 0.01 258);
+  --color-border: oklch(0.88 0.008 258);
+  --color-border-strong: oklch(0.78 0.012 258);
+
+  /* Status */
+  --color-success: oklch(0.55 0.15 150);
+  --color-warning: oklch(0.72 0.16 85);
+
+  /* Focus ring */
+  --color-ring: var(--color-blue);
+  --color-ring-red: var(--color-red);
+
+  /* Shadow scale — consistent elevation */
+  --shadow-1: 0 1px 2px oklch(0.16 0.008 258 / 0.04), 0 1px 3px oklch(0.16 0.008 258 / 0.06);
+  --shadow-2: 0 4px 8px oklch(0.16 0.008 258 / 0.06), 0 2px 4px oklch(0.16 0.008 258 / 0.04);
+  --shadow-3: 0 12px 24px oklch(0.16 0.008 258 / 0.08), 0 4px 12px oklch(0.16 0.008 258 / 0.05);
+  --shadow-4: 0 24px 48px oklch(0.16 0.008 258 / 0.1), 0 8px 16px oklch(0.16 0.008 258 / 0.06);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  /* Spacing scale — fluid, rhythmic */
+  --space-1: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);   /* 4–6px */
+  --space-2: clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem);      /* 8–12px */
+  --space-3: clamp(0.75rem, 0.6rem + 0.75vw, 1.125rem);   /* 12–18px */
+  --space-4: clamp(1rem, 0.8rem + 1vw, 1.5rem);           /* 16–24px */
+  --space-5: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);      /* 24–36px */
+  --space-6: clamp(2rem, 1.6rem + 2vw, 3rem);             /* 32–48px */
+  --space-7: clamp(3rem, 2.4rem + 3vw, 4.5rem);           /* 48–72px */
+  --space-8: clamp(4rem, 3.2rem + 4vw, 6rem);             /* 64–96px */
+
+  /* Custom easings — stronger than browser defaults */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);        /* UI entry, responsive */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);    /* on-screen movement */
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);     /* drawer-like, playful */
+  --ease-sharp: cubic-bezier(0.8, 0, 0.2, 1);        /* exit, decisive */
+
+  /* Motion durations */
+  --duration-fast: 120ms;      /* press feedback, hover */
+  --duration-base: 200ms;      /* transitions, small UI */
+  --duration-slow: 320ms;      /* modals, drawers, sections */
+  --duration-page: 500ms;      /* page-load choreography */
+
+  /* Stagger */
+  --stagger: 60ms;
+
+  /* Container */
+  --container-max: 72rem;        /* 1152px */
+  --container-pad: clamp(1rem, 0.8rem + 1vw, 1.5rem);
+
+  /* Z-index scale */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 20;
+  --z-overlay: 40;
+  --z-modal: 100;
+  --z-toast: 1000;
 }
 
-/* ===== En-tête ===== */
+/* Dark mode — not default, but supported if user forces it */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: oklch(0.12 0.008 258);
+    --color-surface: oklch(0.16 0.01 258);
+    --color-surface-elevated: oklch(0.2 0.012 258);
+    --color-fg: oklch(0.96 0.005 258);
+    --color-fg-muted: oklch(0.65 0.01 258);
+    --color-border: oklch(0.28 0.012 258);
+    --color-border-strong: oklch(0.38 0.015 258);
+    --color-blue-surface: oklch(0.25 0.05 258 / 0.4);
+    --color-red-surface: oklch(0.25 0.06 25 / 0.4);
+    --shadow-1: 0 1px 2px #0004, 0 1px 3px #0006;
+    --shadow-2: 0 4px 8px #0006, 0 2px 4px #0004;
+    --shadow-3: 0 12px 24px #0008, 0 4px 12px #0005;
+    --shadow-4: 0 24px 48px #000a, 0 8px 16px #0006;
+  }
+}
+
+/* ---- Global resets ---- */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ---- Focus visible — consistent, accessible ---- */
+:where(a, button, [role="button"], input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.home-alert :where(a, button):focus-visible {
+  outline-color: var(--color-ring-red);
+}
+
+/* ---- Reduced motion — respect user preference ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .home-notif { opacity: 1; }
+  .home-hero-copy > * { opacity: 1; transform: none; }
+  .home-hero-image { opacity: 1; transform: none; }
+}
+
+/* Hover-only styles — gate behind media query */
+@media (hover: hover) and (pointer: fine) {
+  .home-cta-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-3);
+  }
+  .home-hero .home-cta-btn:hover {
+    box-shadow: 0 12px 28px oklch(0.42 0.14 258 / 0.25);
+  }
+  .home-feature:hover {
+    transform: translateY(-2px);
+  }
+  .home-step:hover .home-step-num {
+    background: var(--color-blue);
+    color: #fff;
+    border-color: var(--color-blue);
+  }
+}
+
+/* =====================================================================
+   Layout: Home Page
+   ===================================================================== */
+.home-page {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--container-pad) var(--space-8);
+  font-family: var(--font-body, system-ui, sans-serif);
+  color: var(--color-fg);
+  background: var(--color-bg);
+  line-height: 1.6;
+}
+
+/* Header */
 .home-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 0 1.5rem;
+  padding: var(--space-4) 0 var(--space-5);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  background: linear-gradient(to bottom, var(--color-bg), transparent);
 }
 
 .home-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-weight: 600;
-  color: var(--text-primary);
-  font-size: 1.05rem;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  color: var(--color-fg);
+  text-decoration: none;
 }
 
 .logo-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .home-header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .home-faq-btn {
-  background-color: #FEF3C7;
-  color: #78350F;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.8rem;
   font-weight: 600;
+  line-height: 1;
+  color: var(--color-blue);
+  background: var(--color-blue-surface);
+  border: 1px solid var(--color-blue-weak);
+  border-radius: var(--radius-full);
   text-decoration: none;
-  white-space: nowrap;
+  transition: background var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
 }
-
-.home-faq-btn:hover {
-  background-color: #FDE68A;
+.home-faq-btn:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) {
+  .home-faq-btn:hover {
+    background: var(--color-blue);
+    color: #fff;
+    border-color: var(--color-blue);
+  }
 }
 
 .home-link-btn {
-  font-size: 0.88rem;
-  color: var(--text-secondary);
-  text-decoration: none;
-}
-
-.home-cta-btn {
-  background-color: var(--accent);
-  color: white;
-  padding: 9px 18px;
-  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 500;
+  color: var(--color-fg-muted);
   text-decoration: none;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .home-link-btn:hover { color: var(--color-fg); }
 }
 
-.home-cta-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(24, 95, 165, 0.35);
-}
-
-.home-dashboard-btn {
-  display: flex;
+/* CTA Button — unified system */
+.home-cta-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  background: var(--color-blue);
+  border: none;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out),
+              background var(--duration-base) var(--ease-out);
+  min-height: 44px; /* touch target */
 }
+.home-cta-btn:active { transform: scale(0.97); }
+.home-cta-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+/* Large CTA variant */
 .home-cta-large {
-  padding: 13px 28px;
-  font-size: 0.95rem;
-  display: inline-block;
+  padding: var(--space-3) var(--space-6);
+  font-size: 1rem;
 }
 
-/* Contour visible quand on navigue au clavier */
-.home-page a:focus-visible,
-.home-page button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+/* Dashboard button variant */
+.home-dashboard-btn {
+  background: transparent;
+  color: var(--color-fg);
+  border: 2px solid var(--color-border);
+  min-width: 140px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .home-dashboard-btn:hover {
+    border-color: var(--color-blue);
+    color: var(--color-blue);
+    background: var(--color-blue-surface);
+  }
 }
 
-/* ===== Mouvements (une seule fois, à l'ouverture de la page) ===== */
-@keyframes home-rise {
+/* =====================================================================
+   Animations — CSS transitions preferred, @starting-style for entry
+   ===================================================================== */
+@keyframes rise {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
 }
 
-@keyframes home-image-in {
-  from { opacity: 0; transform: scale(0.94); }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes image-in {
+  from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: none; }
 }
 
-@keyframes home-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+@keyframes ring-pulse {
+  0% { opacity: 0.8; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.12); }
 }
 
-/* ===== 1. Haut de page ===== */
+@keyframes notif-in {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Staggered entry for hero copy */
+.home-hero-copy > * {
+  animation: rise var(--duration-slow) var(--ease-out) both;
+}
+.home-hero-copy > *:nth-child(1) { animation-delay: calc(var(--stagger) * 0); }
+.home-hero-copy > *:nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
+.home-hero-copy > *:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+.home-hero-copy > *:nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
+.home-hero-copy > *:nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
+.home-hero-copy > *:nth-child(6) { animation-delay: calc(var(--stagger) * 5); }
+
+/* =====================================================================
+   1. HERO — Asymmetric, device mockup + copy
+   ===================================================================== */
 .home-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  grid-template-columns: 1fr 0.85fr;
   align-items: center;
-  gap: 2rem;
-  padding: 3rem 3rem 3rem 3.5rem;
-  border-radius: 28px;
+  gap: var(--space-6);
+  padding: var(--space-7) var(--space-6) var(--space-7) var(--space-7);
+  border-radius: var(--radius-xl);
   background:
-    radial-gradient(ellipse at 85% 50%, rgba(92, 200, 255, 0.18), transparent 60%),
-    var(--home-blue);
-  color: var(--home-on-dark);
+    radial-gradient(ellipse at 85% 40%, var(--color-blue-weak), transparent 55%),
+    var(--color-blue);
+  color: #fff;
   overflow: hidden;
+  position: relative;
 }
 
-/* Le texte apparaît ligne par ligne */
-.home-hero-copy > * {
-  animation: home-rise 0.7s ease-out both;
+.home-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, var(--color-blue) 100%);
+  pointer-events: none;
 }
-.home-hero-copy > *:nth-child(1) { animation-delay: 0.05s; }
-.home-hero-copy > *:nth-child(2) { animation-delay: 0.15s; }
-.home-hero-copy > *:nth-child(3) { animation-delay: 0.25s; }
-.home-hero-copy > *:nth-child(4) { animation-delay: 0.35s; }
-.home-hero-copy > *:nth-child(5) { animation-delay: 0.45s; }
+
+.home-hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 52ch;
+}
 
 .home-hero-copy h1 {
-  font-size: clamp(2rem, 4.4vw, 3.2rem);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(2.25rem, 1.8rem + 3.5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
   color: #fff;
-  margin: 0 0 1.1rem;
 }
 
 .home-hero-lead {
-  font-size: 1.05rem;
-  line-height: 1.55;
-  color: var(--home-on-dark-muted);
-  max-width: 46ch;
-  margin: 0 0 1.75rem;
+  margin: 0 0 var(--space-5);
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);
+  line-height: 1.65;
+  color: oklch(0.9 0.02 258);
+  max-width: 48ch;
 }
 
 .home-hero-actions {
   display: flex;
-  align-items: center;
-  gap: 1.25rem;
   flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
-/* Sur le fond bleu, le bouton principal est blanc (meilleur contraste) */
 .home-hero .home-cta-btn {
-  background-color: #fff;
-  color: var(--home-blue);
+  background: #fff;
+  color: var(--color-blue);
+  box-shadow: var(--shadow-2);
 }
-
-.home-hero .home-cta-btn:hover {
-  box-shadow: 0 8px 24px rgba(92, 200, 255, 0.35);
+@media (hover: hover) and (pointer: fine) {
+  .home-hero .home-cta-btn:hover {
+    box-shadow: 0 16px 36px oklch(0.42 0.14 258 / 0.22);
+  }
 }
 
 .home-hero-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #fff;
   background: none;
   border: none;
-  padding: 0;
-  font: inherit;
-  font-size: 0.9rem;
-  color: var(--home-on-dark);
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: 3px;
   cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
-
-.home-hero a:focus-visible,
-.home-hero button:focus-visible,
-.home-alert a:focus-visible {
-  outline-color: #fff;
+@media (hover: hover) and (pointer: fine) {
+  .home-hero-link:hover { opacity: 0.8; }
 }
 
 .home-hero-note {
+  margin: var(--space-3) 0 0;
   font-size: 0.8rem;
-  color: var(--home-on-dark-muted);
-  margin: 0.9rem 0 0;
+  color: oklch(0.78 0.02 258);
 }
 
-/* Pastilles des capteurs surveillés */
+/* Sensor badges — inline flex, not pills */
 .home-sensors {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  list-style: none;
-  margin: 1.75rem 0 0;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
   padding: 0;
+  list-style: none;
 }
-
 .home-sensors li {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  font-size: 0.8rem;
-  color: var(--home-on-dark);
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: oklch(0.92 0.02 258);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: var(--radius-full);
 }
 
-/* Image du haut de page : cadre arrondi, léger flottement */
+/* Hero visual — device mockup with subtle float */
 .home-hero-visual {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
+  position: relative;
+  z-index: 1;
 }
 
 .home-hero-float {
-  animation: home-float 7s ease-in-out 1.2s infinite;
+  animation: float 8s var(--ease-in-out) 1.5s infinite;
 }
 
 .home-hero-image {
   display: block;
-  width: min(100%, 380px);
+  width: min(100%, 420px);
   height: auto;
   aspect-ratio: 853 / 1280;
   object-fit: cover;
-  border-radius: 26px;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.12),
-    0 24px 70px rgba(0, 10, 60, 0.55),
-    0 0 80px rgba(92, 200, 255, 0.22);
-  animation: home-image-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-4);
+  animation: image-in var(--duration-page) var(--ease-out) 0.2s both;
 }
 
-/* ===== Sections suivantes ===== */
+/* =====================================================================
+   Section base
+   ===================================================================== */
 .home-section {
-  margin-top: 5rem;
+  margin-top: var(--space-8);
 }
 
 .home-section h2 {
-  font-size: clamp(1.5rem, 2.8vw, 2.1rem);
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(1.75rem, 1.4rem + 2vw, 2.5rem);
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--color-fg);
 }
 
 .home-section-lead {
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--text-secondary);
-  margin: 0.75rem 0 0;
-  max-width: 52ch;
+  margin: 0 0 var(--space-5);
+  font-size: clamp(1rem, 0.95rem + 0.2vw, 1.0625rem);
+  line-height: 1.6;
+  color: var(--color-fg-muted);
+  max-width: 56ch;
 }
 
-/* ===== 2. Du détecteur à votre téléphone ===== */
+/* =====================================================================
+   2. HOW IT WORKS — Steps with visual
+   ===================================================================== */
 .home-how {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 3.5rem;
-  align-items: center;
-  scroll-margin-top: 1.5rem;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: var(--space-7);
+  align-items: start;
+  scroll-margin-top: var(--space-5);
 }
 
-/* Le cadre sombre garde l'image belle en mode clair comme en mode sombre */
 .home-how-frame {
   display: flex;
   justify-content: center;
-  padding: 1.25rem;
-  border-radius: 28px;
-  background: var(--home-blue-deep);
+  padding: var(--space-4);
+  border-radius: var(--radius-xl);
+  background: var(--color-blue-surface);
+  border: 1px solid var(--color-blue-weak);
 }
 
 .home-how-frame img {
   display: block;
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   height: auto;
   aspect-ratio: 853 / 1280;
   object-fit: cover;
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
 }
 
 .home-steps {
   list-style: none;
-  margin: 1.75rem 0 0;
+  margin: 0;
   padding: 0;
 }
 
 .home-steps li {
   display: grid;
-  grid-template-columns: 2.25rem minmax(0, 1fr);
-  gap: 1rem;
-  padding: 1.1rem 0;
-  border-top: 1px solid var(--border);
+  grid-template-columns: auto 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--color-border);
 }
+.home-steps li:first-child { border-top: none; padding-top: 0; }
+.home-steps li:last-child { padding-bottom: 0; }
 
 .home-step-num {
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  font-size: 0.9rem;
-  font-weight: 600;
+  border: 2px solid var(--color-blue);
+  color: var(--color-blue);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background var(--duration-base) var(--ease-out),
+              color var(--duration-base) var(--ease-out),
+              border-color var(--duration-base) var(--ease-out);
 }
 
 .home-steps h3 {
-  font-size: 1rem;
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-display, var(--font-body));
+  font-size: 1.05rem;
   font-weight: 600;
-  color: var(--text-primary);
-  margin: 0.25rem 0 0.25rem;
+  line-height: 1.3;
+  color: var(--color-fg);
 }
 
 .home-steps p {
-  font-size: 0.88rem;
-  line-height: 1.5;
-  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--color-fg-muted);
   max-width: 52ch;
 }
 
-/* ===== 3. Section alerte (le moment fort) ===== */
+/* =====================================================================
+   3. ALERT — The moment, red section
+   ===================================================================== */
 .home-alert {
   position: relative;
-  overflow: hidden;
-  border-radius: 28px;
-  min-height: 500px;
-  background: var(--home-red-deep);
+  border-radius: var(--radius-xl);
+  min-height: 520px;
+  background: var(--color-red-strong);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .home-alert-bg {
@@ -355,14 +598,13 @@
   height: 100%;
   object-fit: cover;
   object-position: center 45%;
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
-/* Voile sombre : garde le texte lisible, laisse le triangle rougeoyer derrière */
 .home-alert-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(28, 3, 5, 0.35), rgba(28, 3, 5, 0.88));
+  background: radial-gradient(ellipse at center, oklch(0.25 0.06 25 / 0.25), oklch(0.12 0.06 25 / 0.9));
 }
 
 .home-alert-content {
@@ -372,38 +614,44 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 1.1rem;
-  padding: 4rem 1.5rem;
-  max-width: 640px;
+  gap: var(--space-4);
+  padding: var(--space-7) var(--space-4);
+  max-width: 680px;
 }
 
-.home-section .home-alert-content h2 {
+.home-alert-content h2 {
+  margin: 0;
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(1.75rem, 1.4rem + 2vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   color: #fff;
 }
 
 .home-alert-content > p {
+  margin: 0;
   font-size: 1rem;
-  line-height: 1.55;
-  color: #ffd9d4;
+  line-height: 1.65;
+  color: oklch(0.88 0.04 25);
   max-width: 52ch;
 }
 
-/* Fausse notification : invisible au départ, elle arrive quand la section est à l'écran */
+/* Notification card — enters on scroll */
 .home-notif {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
-  max-width: 440px;
-  margin-top: 0.75rem;
-  padding: 14px 16px;
+  max-width: 460px;
+  padding: var(--space-4) var(--space-4);
   text-align: left;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  border-radius: var(--radius-lg);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   opacity: 0;
 }
 
@@ -413,219 +661,264 @@
 }
 
 .home-notif-title {
+  margin: 0 0 var(--space-1);
   font-size: 0.9rem;
   font-weight: 700;
+  line-height: 1.3;
   color: #fff;
 }
 
 .home-notif-body {
-  font-size: 0.82rem;
-  line-height: 1.45;
-  color: #ffe6e2;
-  margin-top: 3px;
+  margin: 0;
+  font-size: 0.825rem;
+  line-height: 1.5;
+  color: oklch(0.88 0.04 25);
 }
 
-/* Anneau rouge qui pulse trois fois autour de la notification */
 .home-notif::before {
   content: "";
   position: absolute;
-  inset: -3px;
-  border-radius: 21px;
-  border: 2px solid var(--home-red);
+  inset: -4px;
+  border-radius: calc(var(--radius-lg) + 4px);
+  border: 2px solid var(--color-red);
   opacity: 0;
   pointer-events: none;
 }
 
-@keyframes home-notif-in {
-  from { opacity: 0; transform: translateY(28px) scale(0.96); }
-  to { opacity: 1; transform: none; }
-}
-
-@keyframes home-ring {
-  0% { opacity: 0.9; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.1); }
-}
-
 .home-notif-in {
-  animation: home-notif-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation: notif-in var(--duration-slow) var(--ease-out) both;
 }
-
 .home-notif-in::before {
-  animation: home-ring 1.5s ease-out 0.6s 3;
+  animation: ring-pulse 1.6s var(--ease-sharp) 0.5s 3;
 }
 
 .home-notif-caption {
+  margin-top: var(--space-3);
   font-size: 0.75rem;
-  color: #ffb4aa;
+  color: oklch(0.72 0.06 25);
 }
 
-/* ===== 4. Atouts ===== */
+/* =====================================================================
+   4. FEATURES — Varied cards, not identical grid
+   ===================================================================== */
 .home-features-title {
-  margin-bottom: 2rem;
+  text-align: center;
+  margin-bottom: var(--space-6);
 }
 
 .home-features {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 2rem 2.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
 }
 
 .home-feature {
-  padding-top: 1.1rem;
-  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-1);
+  transition: transform var(--duration-base) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out),
+              border-color var(--duration-base) var(--ease-out);
 }
 
+/* Varied card accents — each feature has a subtle personality */
+.home-feature:nth-child(1) { border-top: 3px solid var(--color-blue); }
+.home-feature:nth-child(2) { border-top: 3px solid var(--color-red); }
+.home-feature:nth-child(3) { border-top: 3px solid var(--color-success); }
+.home-feature:nth-child(4) { border-top: 3px solid var(--color-warning); }
+.home-feature:nth-child(5) { border-top: 3px solid var(--color-blue-strong); }
+.home-feature:nth-child(6) { border-top: 3px solid var(--color-red-strong); }
+
+@media (hover: hover) and (pointer: fine) {
+  .home-feature:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-3);
+    border-color: var(--color-border-strong);
+  }
+}
+
+.home-feature svg {
+  width: 28px;
+  height: 28px;
+  color: var(--color-blue);
+  flex-shrink: 0;
+}
+
+.home-feature:nth-child(2) svg { color: var(--color-red); }
+.home-feature:nth-child(3) svg { color: var(--color-success); }
+.home-feature:nth-child(4) svg { color: var(--color-warning); }
+.home-feature:nth-child(5) svg { color: var(--color-blue-strong); }
+.home-feature:nth-child(6) svg { color: var(--color-red-strong); }
+
 .home-feature h3 {
-  font-size: 0.98rem;
+  margin: var(--space-3) 0 var(--space-2);
+  font-family: var(--font-display, var(--font-body));
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--text-primary);
-  margin: 0.7rem 0 0.35rem;
+  line-height: 1.3;
+  color: var(--color-fg);
 }
 
 .home-feature p {
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: var(--text-secondary);
-  max-width: 40ch;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-fg-muted);
+  flex: 1;
 }
 
-/* ===== 5. Appel final ===== */
+/* =====================================================================
+   5. FINAL CTA
+   ===================================================================== */
 .home-final {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
+  gap: var(--space-4);
   text-align: center;
-  padding: 1rem 0;
+  padding: var(--space-6) var(--space-4);
+}
+
+.home-final h2 {
+  margin: 0;
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(1.5rem, 1.2rem + 1.8vw, 2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-fg);
+}
+
+.home-final .home-cta-btn {
+  width: 100%;
+  max-width: 320px;
 }
 
 .home-final-note {
-  font-size: 0.88rem;
-  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-fg-muted);
 }
-
 .home-final-note a {
-  color: var(--accent);
+  color: var(--color-blue);
+  font-weight: 500;
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .home-final-note a:hover { text-decoration: underline; }
 }
 
-/* ===== Responsive : tablette ===== */
+/* =====================================================================
+   Responsive — Mobile first, fluid breakpoints
+   ===================================================================== */
 @media (max-width: 900px) {
   .home-hero {
     grid-template-columns: 1fr;
-    padding: 2rem 1.75rem 2.25rem;
-    gap: 1.75rem;
+    padding: var(--space-6) var(--space-4) var(--space-6) var(--space-5);
+    gap: var(--space-5);
+    border-radius: var(--radius-lg);
   }
-
-  /* Sur tablette et mobile, l'image passe au-dessus du texte */
-  .home-hero-visual {
-    order: -1;
-  }
-
+  .home-hero-visual { order: -1; }
   .home-hero-image {
     width: 100%;
-    max-width: 420px;
+    max-width: 480px;
     aspect-ratio: 16 / 11;
-    object-position: 50% 45%;
+    object-position: 50% 40%;
   }
+  .home-hero-copy { max-width: none; }
+  .home-hero-copy h1 { text-align: center; }
+  .home-hero-lead { text-align: center; margin-left: auto; margin-right: auto; }
+  .home-hero-actions { justify-content: center; text-align: center; }
+  .home-sensors { justify-content: center; }
 
   .home-how {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: var(--space-5);
   }
-
   .home-how-frame {
-    max-width: 420px;
+    max-width: 480px;
     margin: 0 auto;
   }
 
   .home-features {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .home-section {
-    margin-top: 3.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
   }
 }
 
-/* ===== Responsive : mobile ===== */
 @media (max-width: 600px) {
   .home-page {
-    padding: 0 1rem 2.5rem;
+    padding: 0 var(--container-pad) var(--space-7);
   }
 
   .home-header {
-    padding: 1rem 0 1.25rem;
+    padding: var(--space-3) 0 var(--space-4);
   }
-
-  /* Sur très petit écran, on réduit légèrement les boutons de l'en-tête
-     plutôt que de les faire passer à la ligne */
   .home-faq-btn {
-    padding: 7px 12px;
+    padding: var(--space-1) var(--space-2);
     font-size: 0.75rem;
   }
-
   .home-cta-btn {
-    padding: 8px 14px;
-    font-size: 0.78rem;
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.8rem;
   }
-
-  /* Garde juste l'icône, cache le texte "Vela" pour gagner de la place */
-  .home-logo span {
-    display: none;
+  .home-dashboard-btn {
+    min-width: auto;
+    padding: var(--space-2) var(--space-3);
   }
+  .home-logo span { display: none; }
 
   .home-hero {
-    padding: 1.25rem 1.25rem 1.75rem;
-    border-radius: 22px;
+    padding: var(--space-5) var(--space-3) var(--space-5) var(--space-4);
+    border-radius: var(--radius-lg);
   }
+  .home-hero-copy h1 { font-size: 1.875rem; }
+  .home-hero-lead { font-size: 0.95rem; }
+  .home-cta-large { width: 100%; text-align: center; }
+  .home-hero-actions { flex-direction: column; align-items: stretch; gap: var(--space-2); }
+  .home-hero-link { text-align: center; }
+  .home-sensors { gap: var(--space-1); }
+  .home-sensors li { padding: var(--space-1) var(--space-2); font-size: 0.7rem; }
 
-  .home-hero-copy h1 {
-    font-size: 1.75rem;
-  }
-
-  .home-hero-lead {
-    font-size: 0.95rem;
-  }
-
-  .home-cta-large {
-    width: 100%;
-    text-align: center;
-    padding: 13px 20px;
-  }
-
-  .home-hero-actions {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.9rem;
-    text-align: center;
-  }
+  .home-how-frame { padding: var(--space-3); }
+  .home-steps li { gap: var(--space-3); }
+  .home-step-num { width: 2.25rem; height: 2.25rem; font-size: 0.875rem; }
 
   .home-alert {
-    border-radius: 22px;
+    border-radius: var(--radius-lg);
     min-height: 460px;
   }
-
-  .home-alert-content {
-    padding: 3rem 1.1rem;
-  }
+  .home-alert-content { padding: var(--space-5) var(--space-3); }
+  .home-notif { max-width: 100%; padding: var(--space-3); }
 
   .home-features {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: var(--space-3);
   }
+  .home-feature { padding: var(--space-4); }
+
+  .home-final { padding: var(--space-4) var(--space-2); }
 }
 
-/* ===== Personnes qui ont réduit les animations sur leur appareil ===== */
-@media (prefers-reduced-motion: reduce) {
-  .home-page *,
-  .home-page *::before,
-  .home-page *::after {
-    animation: none !important;
-    transition: none !important;
+/* =====================================================================
+   Print styles
+   ===================================================================== */
+@media print {
+  .home-header, .home-hero-actions, .home-notif, .home-final .home-cta-btn {
+    display: none !important;
   }
-
-  /* La notification est alors visible tout de suite */
-  .home-notif {
-    opacity: 1;
+  .home-page { padding: 0; max-width: none; }
+  .home-hero, .home-alert {
+    background: none !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
   }
+  .home-hero-copy h1, .home-alert-content h2 { color: #000 !important; }
+  .home-sensors li { border-color: #ccc !important; color: #000 !important; background: none !important; }
 }
