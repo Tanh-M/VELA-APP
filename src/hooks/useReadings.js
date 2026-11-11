@@ -1,91 +1,64 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
-// AJOUT : mémorise la dernière mesure pour l'afficher hors connexion
+// AJOUT : mémorise le graphe pour l'afficher hors connexion
 import { usePersistentState } from './usePersistentState';
-// AJOUT : actualisation régulière, filet de sécurité si le temps réel se coupe
-import { useLiveRefresh } from './useLiveRefresh';
 
-export function useSensor(deviceId) {
+// Convertit une valeur de la base en nombre, en gardant null si la mesure est absente
+const toNumberOrNull = (value) =>
+  value === null || value === undefined ? null : Number(value);
+
+// Hook : relevés des 24 dernières heures d'UN appareil, prêts pour Chart.jsx
+export function useReadings24h(deviceId) {
   const { currentUser } = useAuth();
-  // CHANGEMENT : la dernière mesure est mémorisée sur l'appareil
-  const [reading, setReading] = usePersistentState(`reading:${deviceId}`, null);
+  // CHANGEMENT : les points du graphe sont mémorisés sur l'appareil
+  const [data, setData] = usePersistentState(`chart24:${deviceId}`, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Nom unique du canal temps réel (évite les conflits si l'appareil est affiché deux fois)
-  const channelName = useRef(`reading-${Math.random().toString(36).slice(2)}`);
-
-  const fetchReading = useCallback(async () => {
+  const fetchReadings = useCallback(async () => {
     if (!currentUser || !deviceId) {
-      setReading(null);
+      setData([]);
       setLoading(false);
       return;
     }
 
-    const { data, error: fetchError } = await supabase
-      .from('sensor_readings')
-      .select('temperature, smoke_level, gas_level, flame_detected, recorded_at')
-      .eq('device_id', deviceId)
-      .order('recorded_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // CHANGEMENT : la base calcule elle-même la moyenne par heure (fonction SQL readings_hourly).
+    // On reçoit au plus 24 lignes, quel que soit le nombre de mesures enregistrées :
+    // plus de limite de 1000 lignes, et une seule requête.
+    const { data: rows, error: fetchError } = await supabase.rpc('readings_hourly', {
+      p_device_id: deviceId,
+    });
 
     if (fetchError) {
       // CHANGEMENT : hors connexion, pas de message d'erreur (le bandeau l'explique)
-      // et la dernière mesure mémorisée reste affichée
+      // et le dernier graphe mémorisé reste affiché
       if (navigator.onLine) setError(fetchError.message);
-    } else {
-      setError(null);
-      setReading(data);
+      setLoading(false);
+      return;
     }
 
+    // Format attendu par Chart.jsx : une mesure absente reste null (pas de faux zéro)
+    const points = (rows || []).map((row) => ({
+      time: `${new Date(row.hour_start).getHours()}h`,
+      temperature: toNumberOrNull(row.avg_temperature),
+      smoke: toNumberOrNull(row.avg_smoke),
+      gas: toNumberOrNull(row.avg_gas),
+    }));
+
+    setError(null);
+    setData(points);
     setLoading(false);
   }, [currentUser, deviceId]);
 
+  // Premier chargement, puis rafraîchissement automatique toutes les 60 secondes
   useEffect(() => {
     setLoading(true);
-    fetchReading();
-  }, [fetchReading]);
+    fetchReadings();
 
-  // TEMPS RÉEL : dès que le détecteur envoie une mesure, elle s'affiche tout de suite.
-  // Le filtre ne laisse passer que les mesures de CET appareil.
-  // La sécurité RLS s'applique : on ne reçoit que ce que l'utilisateur a le droit de voir.
-  useEffect(() => {
-    if (!currentUser || !deviceId) return undefined;
+    const timer = setInterval(fetchReadings, 60000);
+    return () => clearInterval(timer);
+  }, [fetchReadings]);
 
-    const channel = supabase
-      .channel(`${channelName.current}-${deviceId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'sensor_readings',
-          filter: `device_id=eq.${deviceId}`,
-        },
-        (payload) => {
-          const row = payload.new;
-          setError(null);
-          setReading({
-            temperature: row.temperature,
-            smoke_level: row.smoke_level,
-            gas_level: row.gas_level,
-            flame_detected: row.flame_detected,
-            recorded_at: row.recorded_at,
-          });
-        }
-      )
-      .subscribe();
-
-    // Se désabonne quand la page est quittée
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentUser, deviceId]);
-
-  // Filet de sécurité (toutes les 20 s et au retour de l'application au premier plan)
-  useLiveRefresh(fetchReading);
-
-  return { reading, loading, error, refreshReading: fetchReading };
+  return { data, loading, error };
 }
