@@ -117,6 +117,41 @@ function Dashboard() {
     return devices.find((d) => d.id === deviceId)?.name || 'Appareil';
   }
 
+  // Une ligne de la checklist : coche verte si faite, cercle vide sinon
+  function renderStep(done, label) {
+    return (
+      <div className="next-step-row">
+        {done ? (
+          <CheckCircle2 size={16} className="step-done" />
+        ) : (
+          <Circle size={16} className="step-pending" />
+        )}
+        <span>{label}</span>
+      </div>
+    );
+  }
+
+  // La carte de mise en service, définie une fois et affichée à l'un ou l'autre endroit :
+  // - en HAUT tant que la mise en service n'est pas terminée (l'utilisateur en a besoin)
+  // - en BAS une fois terminée (simple confirmation, elle ne gêne plus)
+  // Affichée aux administrateurs seulement.
+  const setupCard =
+    adminDevices.length > 0 ? (
+      <div className="next-steps-card">
+        <h3>{allDone ? 'Mise en service' : 'Prochaines étapes'}</h3>
+
+        {renderStep(stepRegistered, 'Détecteur(s) enregistré(s)')}
+        {renderStep(stepConnected, 'Connecter le système embarqué')}
+        {renderStep(stepData, 'Recevoir vos premières données')}
+
+        {allDone && (
+          <p className="recent-events-note">
+            Votre détecteur est connecté et envoie ses données.
+          </p>
+        )}
+      </div>
+    ) : null;
+
   return (
     // fade-in-up : légère animation d'apparition (montée + fondu), définie dans index.css
     <div className="dashboard fade-in-up">
@@ -171,6 +206,11 @@ function Dashboard() {
             </div>
           )}
 
+          {/* Mise en service pas terminée : la checklist est en haut, bien visible */}
+          {!allDone && setupCard && (
+            <div style={{ marginBottom: '1rem' }}>{setupCard}</div>
+          )}
+
           {/* Grille des fiches capteur : un clic ouvre le détail de l'appareil */}
           <div className="sensor-grid">
             {devices.map((device) => (
@@ -208,46 +248,8 @@ function Dashboard() {
             </div>
           )}
 
-          {/* Checklist de mise en service : cochée automatiquement d'après les vraies données.
-              Affichée aux administrateurs seulement. */}
-          {adminDevices.length > 0 && (
-            <div className="next-steps-card">
-              <h3>{allDone ? 'Mise en service' : 'Prochaines étapes'}</h3>
-
-              <div className="next-step-row">
-                {stepRegistered ? (
-                  <CheckCircle2 size={16} className="step-done" />
-                ) : (
-                  <Circle size={16} className="step-pending" />
-                )}
-                <span>Détecteur(s) enregistré(s)</span>
-              </div>
-
-              <div className="next-step-row">
-                {stepConnected ? (
-                  <CheckCircle2 size={16} className="step-done" />
-                ) : (
-                  <Circle size={16} className="step-pending" />
-                )}
-                <span>Connecter le système embarqué</span>
-              </div>
-
-              <div className="next-step-row">
-                {stepData ? (
-                  <CheckCircle2 size={16} className="step-done" />
-                ) : (
-                  <Circle size={16} className="step-pending" />
-                )}
-                <span>Recevoir vos premières données</span>
-              </div>
-
-              {allDone && (
-                <p className="recent-events-note">
-                  Votre détecteur est connecté et envoie ses données.
-                </p>
-              )}
-            </div>
-          )}
+          {/* Mise en service terminée : la confirmation descend tout en bas, discrète */}
+          {allDone && setupCard}
         </>
       )}
     </div>
