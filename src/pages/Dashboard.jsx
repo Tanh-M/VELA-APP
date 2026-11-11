@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, ShieldAlert, Circle, CheckCircle2 } from 'lucide-react';
 import SensorCard from '../components/SensorCard/SensorCard';
@@ -9,6 +9,8 @@ import { useInstallation } from '../context/InstallationContext';
 import { useAlerts } from '../hooks/useAlerts';
 import { useRecentEvents } from '../hooks/useDeviceEvents';
 import { LEVEL_LABELS, formatDate, formatTime } from '../utils/historyLabels';
+// AJOUT : pour vérifier qu'un détecteur a vraiment envoyé des mesures
+import { supabase } from '../services/supabase';
 import './Dashboard.css';
 
 // Carte d'un appareil : affiche sa dernière mesure et mène à sa page de détail (graphe 24h)
@@ -34,7 +36,7 @@ function Dashboard() {
   const { devices, loading } = useDevices();
 
   // Droits de l'utilisateur
-  const { can } = useInstallation();
+  const { can, getRole } = useInstallation();
 
   // AJOUT : appareils actuellement en alerte (vraies données)
   const { active } = useAlerts();
@@ -51,6 +53,64 @@ function Dashboard() {
 
   // CHANGEMENT : derniers événements RÉELS (table device_events) de ces appareils
   const { events: recentEvents } = useRecentEvents(historyIds, 6);
+
+  // ===== Carte « Prochaines étapes » : cochée d'après les VRAIES données =====
+
+  // Seuls les administrateurs installent du matériel
+  const adminDevices = useMemo(
+    () => devices.filter((d) => getRole(d.installation_id) === 'admin'),
+    [devices, getRole]
+  );
+
+  // « Connecté » = le détecteur s'est identifié avec son jeton au moins une fois
+  // (la fonction serveur remplit last_seen uniquement après avoir enregistré une mesure valide)
+  const connectedDevices = useMemo(
+    () => adminDevices.filter((d) => d.last_seen),
+    [adminDevices]
+  );
+
+  // Clé texte : l'effet ci-dessous ne se relance que si la liste des appareils connectés change
+  const connectedKey = connectedDevices.map((d) => `${d.id}|${d.created_at}`).join(',');
+
+  // Au moins une vraie mesure reçue après la création d'un détecteur connecté
+  const [hasData, setHasData] = useState(false);
+
+  useEffect(() => {
+    if (connectedDevices.length === 0) {
+      setHasData(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function checkData() {
+      const results = await Promise.all(
+        connectedDevices.map(async (d) => {
+          const { data } = await supabase
+            .from('sensor_readings')
+            .select('device_id')
+            .eq('device_id', d.id)
+            .gte('recorded_at', d.created_at)
+            .limit(1);
+          return !!(data && data.length > 0);
+        })
+      );
+      if (!cancelled) setHasData(results.some(Boolean));
+    }
+
+    checkData();
+    const timer = setInterval(checkData, 10000); // revérifie toutes les 10 secondes
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [connectedKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const stepRegistered = adminDevices.length > 0;
+  const stepConnected = connectedDevices.length > 0;
+  const stepData = hasData;
+  const allDone = stepRegistered && stepConnected && stepData;
 
   // Nom d'un appareil à partir de son identifiant
   function deviceName(deviceId) {
@@ -148,22 +208,46 @@ function Dashboard() {
             </div>
           )}
 
-          {/* Checklist des prochaines étapes : reste utile tant que le matériel n'envoie rien */}
-          <div className="next-steps-card">
-            <h3>Prochaines étapes</h3>
-            <div className="next-step-row">
-              <CheckCircle2 size={16} className="step-done" />
-              <span>Détecteur(s) enregistré(s)</span>
+          {/* Checklist de mise en service : cochée automatiquement d'après les vraies données.
+              Affichée aux administrateurs seulement. */}
+          {adminDevices.length > 0 && (
+            <div className="next-steps-card">
+              <h3>{allDone ? 'Mise en service' : 'Prochaines étapes'}</h3>
+
+              <div className="next-step-row">
+                {stepRegistered ? (
+                  <CheckCircle2 size={16} className="step-done" />
+                ) : (
+                  <Circle size={16} className="step-pending" />
+                )}
+                <span>Détecteur(s) enregistré(s)</span>
+              </div>
+
+              <div className="next-step-row">
+                {stepConnected ? (
+                  <CheckCircle2 size={16} className="step-done" />
+                ) : (
+                  <Circle size={16} className="step-pending" />
+                )}
+                <span>Connecter le système embarqué</span>
+              </div>
+
+              <div className="next-step-row">
+                {stepData ? (
+                  <CheckCircle2 size={16} className="step-done" />
+                ) : (
+                  <Circle size={16} className="step-pending" />
+                )}
+                <span>Recevoir vos premières données</span>
+              </div>
+
+              {allDone && (
+                <p className="recent-events-note">
+                  Votre détecteur est connecté et envoie ses données.
+                </p>
+              )}
             </div>
-            <div className="next-step-row">
-              <Circle size={16} className="step-pending" />
-              <span>Connecter le système embarqué</span>
-            </div>
-            <div className="next-step-row">
-              <Circle size={16} className="step-pending" />
-              <span>Recevoir vos premières données</span>
-            </div>
-          </div>
+          )}
         </>
       )}
     </div>
