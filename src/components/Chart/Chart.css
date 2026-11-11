@@ -35,3 +35,12 @@
   height: 7px;
   border-radius: 50%;
 }
+
+/* Mesures sans données : message discret sous le graphe */
+.chart-unavailable {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  text-align: center;
+  margin-top: 10px;
+}

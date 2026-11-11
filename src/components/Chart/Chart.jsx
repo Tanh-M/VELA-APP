@@ -2,7 +2,39 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './Chart.css';
 
+// Une mesure est « présente » si elle a au moins une valeur sur la période
+function hasValues(data, key) {
+  return data.some((point) => point[key] !== null && point[key] !== undefined);
+}
+
+// Écrit une liste en français : "Température et fumée"
+function joinLabels(labels) {
+  if (labels.length <= 1) return labels.join('');
+  return `${labels.slice(0, -1).join(', ')} et ${labels[labels.length - 1]}`;
+}
+
 function Chart({ data }) {
+  // Quelles courbes ont réellement des données ?
+  const hasTemp = hasValues(data, 'temperature');
+  const hasSmoke = hasValues(data, 'smoke');
+  const hasGas = hasValues(data, 'gas');
+
+  // Mesures indisponibles : affichées sous le graphe au lieu de tracer des courbes vides
+  const missing = [];
+  if (!hasTemp) missing.push('température');
+  if (!hasSmoke) missing.push('fumée');
+  if (!hasGas) missing.push('gaz');
+
+  // Aucune mesure du tout : message à la place du graphe
+  if (missing.length === 3) {
+    return (
+      <div className="chart-card">
+        <h3>Évolution des mesures - 24 dernières heures</h3>
+        <p className="chart-unavailable">Aucune mesure disponible pour le moment.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="chart-card">
       <h3>Évolution des mesures - 24 dernières heures</h3>
@@ -36,7 +68,7 @@ function Chart({ data }) {
             }}
           />
 
-          {/* Légende du graphe */}
+          {/* Légende du graphe : elle ne montre que les courbes tracées */}
           <Legend
             content={({ payload }) => (
               <div className="custom-legend">
@@ -50,11 +82,27 @@ function Chart({ data }) {
             )}
           />
 
-          <Area type="monotone" dataKey="temperature" name="Température (°C)" stroke="#185FA5" strokeWidth={2.5} fill="url(#colorTemp)" activeDot={{ r: 5 }} />
-          <Area type="monotone" dataKey="smoke" name="Fumée (%)" stroke="#D85A30" strokeWidth={2.5} fill="url(#colorSmoke)" activeDot={{ r: 5 }} />
-          <Area type="monotone" dataKey="gas" name="Gaz (ppm)" stroke="#639922" strokeWidth={2.5} fill="url(#colorGas)" activeDot={{ r: 5 }} />
+          {/* Chaque courbe n'est tracée que si le capteur a fourni des données.
+              connectNulls : une heure sans mesure ne coupe pas la courbe. */}
+          {hasTemp && (
+            <Area type="monotone" dataKey="temperature" name="Température (°C)" stroke="#185FA5" strokeWidth={2.5} fill="url(#colorTemp)" activeDot={{ r: 5 }} connectNulls />
+          )}
+          {hasSmoke && (
+            <Area type="monotone" dataKey="smoke" name="Fumée (%)" stroke="#D85A30" strokeWidth={2.5} fill="url(#colorSmoke)" activeDot={{ r: 5 }} connectNulls />
+          )}
+          {hasGas && (
+            <Area type="monotone" dataKey="gas" name="Gaz (ppm)" stroke="#639922" strokeWidth={2.5} fill="url(#colorGas)" activeDot={{ r: 5 }} connectNulls />
+          )}
         </AreaChart>
       </ResponsiveContainer>
+
+      {/* Mesures sans données : on le dit clairement plutôt que de les cacher en silence */}
+      {missing.length > 0 && (
+        <p className="chart-unavailable">
+          {joinLabels(missing).charAt(0).toUpperCase() + joinLabels(missing).slice(1)} :{' '}
+          {missing.length > 1 ? 'indisponibles' : 'indisponible'} pour le moment.
+        </p>
+      )}
     </div>
   );
 }

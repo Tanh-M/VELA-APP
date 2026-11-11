@@ -1,91 +1,91 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
-// AJOUT : mémorise le graphe pour l'afficher hors connexion
+// AJOUT : mémorise la dernière mesure pour l'afficher hors connexion
 import { usePersistentState } from './usePersistentState';
+// AJOUT : actualisation régulière, filet de sécurité si le temps réel se coupe
+import { useLiveRefresh } from './useLiveRefresh';
 
-// Hook : relevés des 24 dernières heures d'UN appareil, prêts pour Chart.jsx
-export function useReadings24h(deviceId) {
+export function useSensor(deviceId) {
   const { currentUser } = useAuth();
-  // CHANGEMENT : les points du graphe sont mémorisés sur l'appareil
-  const [data, setData] = usePersistentState(`chart24:${deviceId}`, []);
+  // CHANGEMENT : la dernière mesure est mémorisée sur l'appareil
+  const [reading, setReading] = usePersistentState(`reading:${deviceId}`, null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchReadings = useCallback(async () => {
+  // Nom unique du canal temps réel (évite les conflits si l'appareil est affiché deux fois)
+  const channelName = useRef(`reading-${Math.random().toString(36).slice(2)}`);
+
+  const fetchReading = useCallback(async () => {
     if (!currentUser || !deviceId) {
-      setData([]);
+      setReading(null);
       setLoading(false);
       return;
     }
 
-    // Début de la fenêtre : il y a 24 heures
-    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-
-    // On prend les relevés les plus RÉCENTS en premier (limite de 1000 lignes par requête)
-    const { data: rows, error: fetchError } = await supabase
+    const { data, error: fetchError } = await supabase
       .from('sensor_readings')
-      .select('temperature, smoke_level, gas_level, recorded_at')
+      .select('temperature, smoke_level, gas_level, flame_detected, recorded_at')
       .eq('device_id', deviceId)
-      .gte('recorded_at', since)
       .order('recorded_at', { ascending: false })
-      .limit(1000);
+      .limit(1)
+      .maybeSingle();
 
     if (fetchError) {
       // CHANGEMENT : hors connexion, pas de message d'erreur (le bandeau l'explique)
-      // et le dernier graphe mémorisé reste affiché
+      // et la dernière mesure mémorisée reste affichée
       if (navigator.onLine) setError(fetchError.message);
-      setLoading(false);
-      return;
+    } else {
+      setError(null);
+      setReading(data);
     }
 
-    // Regroupe les relevés par heure et fait la moyenne : un point par heure sur le graphe
-    const byHour = new Map();
-
-    rows.forEach((row) => {
-      const date = new Date(row.recorded_at);
-      date.setMinutes(0, 0, 0); // début de l'heure
-      const key = date.getTime();
-
-      if (!byHour.has(key)) {
-        byHour.set(key, { hour: date.getHours(), temps: [], smokes: [], gases: [] });
-      }
-
-      const bucket = byHour.get(key);
-      if (row.temperature !== null) bucket.temps.push(row.temperature);
-      if (row.smoke_level !== null) bucket.smokes.push(row.smoke_level);
-      if (row.gas_level !== null) bucket.gases.push(row.gas_level);
-    });
-
-    // Moyenne arrondie à 1 décimale (null si aucune valeur dans l'heure)
-    const average = (list) =>
-      list.length === 0
-        ? null
-        : Math.round((list.reduce((sum, v) => sum + v, 0) / list.length) * 10) / 10;
-
-    // Du plus ancien au plus récent, au format attendu par Chart.jsx
-    const points = [...byHour.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map(([, bucket]) => ({
-        time: `${bucket.hour}h`,
-        temperature: average(bucket.temps),
-        smoke: average(bucket.smokes),
-        gas: average(bucket.gases),
-      }));
-
-    setError(null);
-    setData(points);
     setLoading(false);
   }, [currentUser, deviceId]);
 
-  // Premier chargement, puis rafraîchissement automatique toutes les 60 secondes
   useEffect(() => {
     setLoading(true);
-    fetchReadings();
+    fetchReading();
+  }, [fetchReading]);
 
-    const timer = setInterval(fetchReadings, 60000);
-    return () => clearInterval(timer);
-  }, [fetchReadings]);
+  // TEMPS RÉEL : dès que le détecteur envoie une mesure, elle s'affiche tout de suite.
+  // Le filtre ne laisse passer que les mesures de CET appareil.
+  // La sécurité RLS s'applique : on ne reçoit que ce que l'utilisateur a le droit de voir.
+  useEffect(() => {
+    if (!currentUser || !deviceId) return undefined;
 
-  return { data, loading, error };
+    const channel = supabase
+      .channel(`${channelName.current}-${deviceId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'sensor_readings',
+          filter: `device_id=eq.${deviceId}`,
+        },
+        (payload) => {
+          const row = payload.new;
+          setError(null);
+          setReading({
+            temperature: row.temperature,
+            smoke_level: row.smoke_level,
+            gas_level: row.gas_level,
+            flame_detected: row.flame_detected,
+            recorded_at: row.recorded_at,
+          });
+        }
+      )
+      .subscribe();
+
+    // Se désabonne quand la page est quittée
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, deviceId]);
+
+  // Filet de sécurité (toutes les 20 s et au retour de l'application au premier plan)
+  useLiveRefresh(fetchReading);
+
+  return { reading, loading, error, refreshReading: fetchReading };
 }
