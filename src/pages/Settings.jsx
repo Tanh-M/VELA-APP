@@ -45,6 +45,7 @@ function Settings() {
   ];
 
   // Charge la préférence e-mail de l'utilisateur au chargement de la page
+  // (la table profiles identifie l'utilisateur par la colonne user_id)
   useEffect(() => {
     if (!currentUser) return undefined;
 
@@ -54,7 +55,7 @@ function Settings() {
       const { data, error } = await supabase
         .from('profiles')
         .select('email_alerts')
-        .eq('id', currentUser.id)
+        .eq('user_id', currentUser.id)
         .maybeSingle();
 
       if (cancelled) return;
@@ -89,7 +90,7 @@ function Settings() {
     const { data, error } = await supabase
       .from('profiles')
       .update({ email_alerts: next })
-      .eq('id', currentUser.id)
+      .eq('user_id', currentUser.id)
       .select('email_alerts');
 
     if (error || !data || data.length === 0) {
