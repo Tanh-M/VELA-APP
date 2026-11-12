@@ -1,9 +1,14 @@
 // Seuils par défaut, FIXES : ils s'appliquent à tout détecteur qui n'a pas de réglage
-// personnalisé (valeurs de travail, à ajuster après calibration du capteur physique)
+// personnalisé.
+// ATTENTION : ils doivent rester identiques à ceux du déclencheur SQL check_reading_alert
+// et de la fonction Edge ingest.
+// Repères : gaz / CO = norme EN 50291 (30 ppm attention, 100 ppm danger) ;
+// température = détecteurs thermiques EN 54-5, classe A1 (54 à 65 °C) ;
+// fumée = pas de norme applicable, valeurs de travail.
 const DEFAULT_THRESHOLDS = {
-  temperature: { moyen: 45, critique: 60 },
+  temperature: { moyen: 54, critique: 65 },
   smoke: { moyen: 25, critique: 50 },
-  gas: { moyen: 30, critique: 60 },
+  gas: { moyen: 30, critique: 100 },
 };
 
 // Renvoie les seuils par défaut. Ils ne sont plus modifiables depuis les Paramètres :

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sun, Moon, HelpCircle, BookOpen, ChevronRight, BellRing, TestTube2, Sliders,
@@ -14,6 +14,8 @@ import { mockSensors } from '../data/mockSensors';
 // AJOUT : mode démonstration (interrupteur + panneau)
 import { DEMO_MODE_ENABLED } from '../config/demo';
 import DemoPanel from '../components/DemoPanel/DemoPanel';
+// AJOUT : pour lire et enregistrer la préférence « alertes par e-mail »
+import { supabase } from '../services/supabase';
 import './Settings.css';
 
 // Page Paramètres : apparence, seuils par défaut (lecture seule), notifications, aide
@@ -22,8 +24,13 @@ function Settings() {
   const { currentUser } = useAuth();
   // AJOUT : true si l'utilisateur administre au moins une installation
   const { isAdminSomewhere } = useInstallation();
-  const [notifEmail, setNotifEmail] = useState(false);
   const [simulating, setSimulating] = useState(false);
+
+  // CHANGEMENT : la préférence e-mail est maintenant enregistrée en base (profiles.email_alerts)
+  const [notifEmail, setNotifEmail] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(true);
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailError, setEmailError] = useState('');
 
   // Gestion de l'activation des notifications push
   const { subscribe, status: pushStatus, errorMessage: pushError } = usePushNotifications();
@@ -33,8 +40,65 @@ function Settings() {
   const defaultRows = [
     { label: 'Température', unit: '°C', ...defaults.temperature },
     { label: 'Fumée', unit: '%', ...defaults.smoke },
-    { label: 'Gaz', unit: '%', ...defaults.gas },
+    // CHANGEMENT : le gaz s'exprime en ppm (comme sur la fiche capteur)
+    { label: 'Gaz', unit: 'ppm', ...defaults.gas },
   ];
+
+  // Charge la préférence e-mail de l'utilisateur au chargement de la page
+  useEffect(() => {
+    if (!currentUser) return undefined;
+
+    let cancelled = false;
+
+    async function loadEmailPreference() {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('email_alerts')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error) {
+        setEmailError("Impossible de charger votre préférence d'e-mail.");
+      } else {
+        setNotifEmail(Boolean(data?.email_alerts));
+      }
+      setEmailLoading(false);
+    }
+
+    loadEmailPreference();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser]);
+
+  // Active ou désactive les alertes par e-mail, et l'enregistre en base.
+  // L'interrupteur change tout de suite à l'écran ; si l'enregistrement échoue, il revient en arrière.
+  async function handleToggleEmail() {
+    if (emailLoading || emailSaving) return;
+
+    const next = !notifEmail;
+    setNotifEmail(next);
+    setEmailSaving(true);
+    setEmailError('');
+
+    // .select() permet de vérifier qu'une ligne a réellement été modifiée
+    // (si la sécurité de la base refuse, aucune ligne n'est renvoyée)
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ email_alerts: next })
+      .eq('id', currentUser.id)
+      .select('email_alerts');
+
+    if (error || !data || data.length === 0) {
+      setNotifEmail(!next);
+      setEmailError("Impossible d'enregistrer votre choix. Réessayez plus tard.");
+    }
+
+    setEmailSaving(false);
+  }
 
   function handlePushClick() {
     subscribe();
@@ -139,15 +203,25 @@ function Settings() {
       {/* ===== Notifications par email ===== */}
       <div className="settings-card">
         <h3>Notifications par email</h3>
+        <p className="settings-card-desc">
+          Recevez un e-mail lorsqu'un détecteur de votre installation déclenche une alerte.
+        </p>
         <div className="settings-row">
-          <span>Recevoir un résumé par email</span>
+          <span>Recevoir les alertes par email</span>
           <button
             className={`switch ${notifEmail ? 'switch-on' : ''}`}
-            onClick={() => setNotifEmail(!notifEmail)}
+            onClick={handleToggleEmail}
+            disabled={emailLoading || emailSaving}
+            aria-pressed={notifEmail}
+            aria-label="Recevoir les alertes par email"
+            style={{ opacity: emailLoading || emailSaving ? 0.6 : 1 }}
           >
             <span className="switch-dot" />
           </button>
         </div>
+        {emailError && (
+          <p className="auth-error" style={{ marginTop: '10px' }}>{emailError}</p>
+        )}
       </div>
 
       {/* ===== AJOUT : Mode démonstration (administrateurs uniquement, désactivable dans src/config/demo.js) ===== */}
