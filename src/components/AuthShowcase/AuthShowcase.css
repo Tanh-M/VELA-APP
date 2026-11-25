@@ -1,0 +1,185 @@
+/* ===== Panneau de droite des pages Connexion et Inscription ===== */
+/* Caché par défaut : il n'apparaît que sur grand écran */
+.auth-showcase {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .auth-showcase {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2.5rem;
+    overflow: hidden;
+    color: #eef3ff;
+    /* Bleu nuit de Vela, avec un halo discret et une fine grille de points */
+    background-color: #0b1424;
+    background-image:
+      radial-gradient(circle at 75% 15%, rgba(24, 95, 165, 0.38), transparent 55%),
+      radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: auto, 28px 28px;
+  }
+}
+
+/* ===== Scène : maison, pastilles, notification ===== */
+.auth-showcase-stage {
+  position: relative;
+  width: min(100%, 440px);
+  aspect-ratio: 440 / 340;
+  margin-bottom: 4.75rem;
+}
+
+.auth-house {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Anneaux de détection : ils s'allument l'un après l'autre, de l'intérieur vers l'extérieur */
+.auth-ring {
+  opacity: 0.2;
+  animation: auth-ring-glow 3.6s ease-in-out infinite;
+}
+.auth-ring-2 { animation-delay: 0.5s; }
+.auth-ring-3 { animation-delay: 1s; }
+
+@keyframes auth-ring-glow {
+  0%, 100% { opacity: 0.14; }
+  40% { opacity: 0.55; }
+}
+
+/* Le bouclier respire doucement */
+.auth-shield {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: auth-breathe 3.6s ease-in-out infinite;
+}
+
+@keyframes auth-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ===== Pastilles des capteurs : elles flottent, chacune à son rythme ===== */
+.auth-chip {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: #dbe6ff;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: auth-float 6s ease-in-out infinite;
+}
+
+.auth-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80; /* vert : le capteur est en bon état */
+}
+
+.auth-chip-smoke { top: 12%; left: 2%; }
+.auth-chip-temp  { top: 20%; right: 0; animation-duration: 7s; animation-delay: -2s; }
+.auth-chip-gas   { top: 58%; left: -2%; animation-duration: 6.5s; animation-delay: -1s; }
+.auth-chip-flame { top: 68%; right: 2%; animation-duration: 5.5s; animation-delay: -3s; }
+
+@keyframes auth-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+/* ===== Notification d'exemple : apparaît, reste, puis s'efface (en boucle) ===== */
+.auth-notif {
+  position: absolute;
+  left: 50%;
+  bottom: -3.4rem;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  width: min(94%, 350px);
+  padding: 12px 14px;
+  border-radius: 16px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: auth-notif 11s ease-in-out 1.2s infinite;
+}
+
+.auth-notif-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.auth-notif-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.auth-notif-body {
+  font-size: 0.76rem;
+  line-height: 1.4;
+  color: #c9d6f2;
+  margin-top: 2px;
+}
+
+@keyframes auth-notif {
+  0%, 8% { opacity: 0; transform: translate(-50%, 24px) scale(0.97); }
+  14%, 70% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  78%, 100% { opacity: 0; transform: translate(-50%, -8px) scale(0.98); }
+}
+
+/* ===== Texte du panneau ===== */
+.auth-showcase-copy {
+  text-align: center;
+  max-width: 390px;
+}
+
+.auth-showcase-copy h2 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #fff;
+  margin-bottom: 0.7rem;
+}
+
+.auth-showcase-copy p {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #aebbe0;
+}
+
+/* ===== Personnes qui ont réduit les animations sur leur appareil ===== */
+@media (prefers-reduced-motion: reduce) {
+  .auth-ring,
+  .auth-shield,
+  .auth-chip {
+    animation: none;
+  }
+
+  .auth-ring { opacity: 0.3; }
+
+  /* La notification reste visible, sans mouvement */
+  .auth-notif {
+    animation: none;
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}

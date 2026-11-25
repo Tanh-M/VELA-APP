@@ -1,0 +1,165 @@
+/* =====================================================================
+   Mise en page des pages Connexion et Inscription
+   - téléphone / tablette : la carte seule, centrée (comme avant) ;
+   - ordinateur (960 px et plus) : formulaire à gauche, panneau Vela à droite.
+   Ce fichier ne change RIEN pour les autres pages (mot de passe oublié, etc.).
+   ===================================================================== */
+
+/* Conteneur du formulaire : il garde la carte centrée, comme avant */
+.auth-split-form {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* ===== Champs avec icône et bouton "voir le mot de passe" ===== */
+.auth-input-wrap {
+  position: relative;
+  display: block;
+}
+
+.auth-input-wrap input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Place réservée au bouton "œil" à droite des champs mot de passe */
+.auth-input-wrap.has-eye input {
+  padding-right: 40px;
+}
+
+/* Les icônes à gauche des champs n'apparaissent que sur ordinateur */
+.auth-input-icon {
+  display: none;
+}
+
+.auth-eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.auth-eye:hover {
+  color: var(--accent);
+}
+
+/* ===== Mouvement d'entrée du formulaire ===== */
+@keyframes auth-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ===== Ordinateur : deux colonnes ===== */
+@media (min-width: 960px) {
+  .auth-page.auth-split {
+    display: grid;
+    grid-template-columns: minmax(420px, 1fr) minmax(0, 1.1fr);
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .auth-split-form {
+    align-items: center;
+    padding: 2.5rem 2rem;
+  }
+
+  /* La carte devient simple : plus de cadre, plus de fond */
+  .auth-split .auth-card {
+    background: transparent;
+    border: none;
+    padding: 0;
+    max-width: 400px;
+  }
+
+  .auth-split .auth-logo {
+    font-size: 1.15rem;
+    margin-bottom: 2rem;
+  }
+
+  .auth-split .auth-logo .logo-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .auth-split .auth-card h2 {
+    font-size: 1.75rem;
+    letter-spacing: -0.01em;
+  }
+
+  .auth-split .auth-subtitle {
+    font-size: 0.92rem;
+    margin-bottom: 1.75rem;
+  }
+
+  /* Icônes à gauche des champs */
+  .auth-split .auth-input-icon {
+    display: block;
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    pointer-events: none;
+  }
+
+  .auth-split .auth-input-wrap input {
+    padding-left: 40px;
+  }
+
+  .auth-split .auth-form input {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    border-radius: 10px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .auth-split .auth-form input:focus {
+    box-shadow: 0 0 0 4px rgba(24, 95, 165, 0.16);
+  }
+
+  .auth-split .auth-submit-btn {
+    padding: 13px;
+    border-radius: 10px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .auth-split .auth-submit-btn:hover:not(:disabled) {
+    opacity: 1;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(24, 95, 165, 0.35);
+  }
+
+  /* Le contenu de la carte apparaît ligne par ligne à l'ouverture */
+  .auth-split .auth-card > * {
+    animation: auth-rise 0.6s ease-out both;
+  }
+  .auth-split .auth-card > *:nth-child(1) { animation-delay: 0.05s; }
+  .auth-split .auth-card > *:nth-child(2) { animation-delay: 0.12s; }
+  .auth-split .auth-card > *:nth-child(3) { animation-delay: 0.19s; }
+  .auth-split .auth-card > *:nth-child(4) { animation-delay: 0.26s; }
+  .auth-split .auth-card > *:nth-child(5) { animation-delay: 0.33s; }
+  .auth-split .auth-card > *:nth-child(6) { animation-delay: 0.4s; }
+  .auth-split .auth-card > *:nth-child(7) { animation-delay: 0.47s; }
+}
+
+/* ===== Personnes qui ont réduit les animations sur leur appareil ===== */
+@media (prefers-reduced-motion: reduce) {
+  .auth-split .auth-card > * {
+    animation: none !important;
+  }
+
+  .auth-split .auth-submit-btn,
+  .auth-split .auth-form input {
+    transition: none;
+  }
+}

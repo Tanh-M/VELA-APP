@@ -1,13 +1,21 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import logo from '../assets/icons/logo-vela.svg';
 import { useAuth } from '../context/AuthContext';
+// AJOUT : panneau décoratif de droite (affiché sur ordinateur seulement)
+import AuthShowcase from '../components/AuthShowcase/AuthShowcase';
 import './Login.css';
+// AJOUT : mise en page en deux colonnes sur ordinateur
+import './AuthSplit.css';
 
 function Login() {
   // Stocke ce que l'utilisateur tape dans les champs email et mot de passe
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // AJOUT : affiche ou masque le mot de passe (bouton "œil")
+  const [showPassword, setShowPassword] = useState(false);
 
   // Stocke un message d'erreur à afficher si la connexion échoue
   const [error, setError] = useState('');
@@ -41,55 +49,80 @@ function Login() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">
-          <img src={logo} alt="VELA" className="logo-icon" />
-          <span>VELA</span>
+    // auth-split : sur ordinateur, formulaire à gauche et panneau Vela à droite
+    <div className="auth-page auth-split">
+      <div className="auth-split-form">
+        <div className="auth-card">
+          <div className="auth-logo">
+            <img src={logo} alt="VELA" className="logo-icon" />
+            <span>VELA</span>
+          </div>
+
+          <h2>Connexion</h2>
+          <p className="auth-subtitle">Accédez à votre espace de supervision</p>
+
+          {/* N'affiche le message d'erreur que s'il y en a un */}
+          {error && <p className="auth-error">{error}</p>}
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <label>
+              Email
+              <span className="auth-input-wrap">
+                <Mail size={16} className="auth-input-icon" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="vous@email.com"
+                  autoComplete="email"
+                  required
+                />
+              </span>
+            </label>
+
+            <label>
+              {/* Ligne combinant le label "Mot de passe" et le lien "oublié", côte à côte */}
+              <div className="auth-label-row">
+                <span>Mot de passe</span>
+                <Link to="/forgot-password" className="auth-forgot-link">Mot de passe oublié ?</Link>
+              </div>
+              <span className="auth-input-wrap has-eye">
+                <Lock size={16} className="auth-input-icon" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="auth-eye"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </span>
+            </label>
+
+            <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+              {isSubmitting ? 'Connexion...' : 'Se connecter'}
+            </button>
+          </form>
+
+          <p className="auth-switch">
+            Pas encore de compte ? <Link to="/register">Créer un compte</Link>
+          </p>
         </div>
-
-        <h2>Connexion</h2>
-        <p className="auth-subtitle">Accédez à votre espace de supervision</p>
-
-        {/* N'affiche le message d'erreur que s'il y en a un */}
-        {error && <p className="auth-error">{error}</p>}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <label>
-            Email
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="vous@email.com"
-              required
-            />
-          </label>
-
-          <label>
-            {/* Ligne combinant le label "Mot de passe" et le lien "oublié", côte à côte */}
-            <div className="auth-label-row">
-              <span>Mot de passe</span>
-              <Link to="/forgot-password" className="auth-forgot-link">Mot de passe oublié ?</Link>
-            </div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </label>
-
-          <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
-            {isSubmitting ? 'Connexion...' : 'Se connecter'}
-          </button>
-        </form>
-
-        <p className="auth-switch">
-          Pas encore de compte ? <Link to="/register">Créer un compte</Link>
-        </p>
       </div>
+
+      {/* Panneau de droite : visible uniquement sur ordinateur */}
+      <AuthShowcase
+        title="Votre maison, sous surveillance continue"
+        text="Vela vous alerte en quelques secondes et prévient toute la famille, où que vous soyez."
+      />
     </div>
   );
 }
