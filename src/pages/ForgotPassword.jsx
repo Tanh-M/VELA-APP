@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/icons/logo-vela.svg';
 import { supabase } from '../services/supabase';
+// AJOUT : panneau décoratif (maison, capteurs), affiché à gauche sur ordinateur
+import AuthShowcase from '../components/AuthShowcase/AuthShowcase';
 import './Login.css';
+// AJOUT : mise en page en deux colonnes (panneau à gauche, formulaire à droite)
+import './AuthSplit.css';
 
 // Délai avant de pouvoir redemander un code (en secondes)
 const RESEND_DELAY = 60;
@@ -191,182 +195,192 @@ function ForgotPassword() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">
-          <img src={logo} alt="VELA" className="logo-icon" />
-          <span>VELA</span>
+    // MODIFIÉ : auth-split = panneau Vela à gauche, formulaire à droite (sur ordinateur)
+    <div className="auth-page auth-split">
+      {/* AJOUT : colonne du formulaire */}
+      <div className="auth-split-form">
+        <div className="auth-card">
+          <div className="auth-logo">
+            <img src={logo} alt="VELA" className="logo-icon" />
+            <span>VELA</span>
+          </div>
+
+          {/* ===== Étape 1 : adresse e-mail ===== */}
+          {step === 'email' && (
+            <>
+              <h2>Mot de passe oublié</h2>
+              <p className="auth-subtitle">
+                Entrez votre email, nous vous enverrons un code à 6 chiffres pour réinitialiser votre mot de passe.
+              </p>
+
+              {error && <p className="auth-error">{error}</p>}
+
+              <form onSubmit={handleEmailSubmit} className="auth-form">
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="vous@email.com"
+                    autoComplete="email"
+                    required
+                  />
+                </label>
+
+                <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+                  {isSubmitting ? 'Envoi...' : 'Envoyer le code'}
+                </button>
+              </form>
+            </>
+          )}
+
+          {/* ===== Étape 2 : code reçu et nouveau mot de passe ===== */}
+          {step === 'code' && (
+            <>
+              <h2>Saisissez votre code</h2>
+              <p className="auth-subtitle">
+                Code envoyé à {email.trim()}.{' '}
+                <button
+                  type="button"
+                  className="auth-link-btn"
+                  onClick={() => {
+                    setStep('email');
+                    setError('');
+                    setInfo('');
+                    setVerified(false);
+                  }}
+                >
+                  Changer d'adresse
+                </button>
+              </p>
+
+              {info && <p className="auth-success">{info}</p>}
+              {error && <p className="auth-error">{error}</p>}
+
+              <form onSubmit={handleCodeSubmit} className="auth-form">
+                <label>
+                  Code à 6 chiffres
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/[^0-9\s]/g, ''))}
+                    placeholder="123456"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={10}
+                    className="auth-code-input"
+                    required
+                    autoFocus
+                  />
+                </label>
+
+                <label>
+                  Nouveau mot de passe
+                  <input
+                    type={showPasswords ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="8 caractères minimum"
+                    autoComplete="new-password"
+                    required
+                  />
+                </label>
+
+                <label>
+                  Confirmer le mot de passe
+                  <input
+                    type={showPasswords ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Retapez le mot de passe"
+                    autoComplete="new-password"
+                    required
+                  />
+                </label>
+
+                <button type="button" className="auth-link-btn" onClick={() => setShowPasswords(!showPasswords)}>
+                  {showPasswords ? 'Masquer' : 'Afficher'} les mots de passe
+                </button>
+
+                <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+                  {isSubmitting ? 'Vérification...' : 'Changer le mot de passe'}
+                </button>
+
+                <button
+                  type="button"
+                  className="auth-secondary-btn"
+                  onClick={handleResend}
+                  disabled={cooldown > 0 || isSubmitting}
+                >
+                  {cooldown > 0 ? `Renvoyer le code (${cooldown} s)` : 'Renvoyer le code'}
+                </button>
+              </form>
+            </>
+          )}
+
+          {/* ===== Étape 3 : double authentification (seulement si elle est activée sur le compte) ===== */}
+          {step === 'mfa' && (
+            <>
+              <h2>Double authentification</h2>
+              <p className="auth-subtitle">
+                Votre compte est protégé. Ouvrez votre application d'authentification et saisissez
+                le code à 6 chiffres affiché pour Vela.
+              </p>
+
+              {error && <p className="auth-error">{error}</p>}
+
+              <form onSubmit={handleMfaSubmit} className="auth-form">
+                <label>
+                  Code de l'application
+                  <input
+                    type="text"
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/[^0-9\s]/g, ''))}
+                    placeholder="123456"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={10}
+                    className="auth-code-input"
+                    required
+                    autoFocus
+                  />
+                </label>
+
+                <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
+                  {isSubmitting ? 'Vérification...' : 'Valider et changer le mot de passe'}
+                </button>
+              </form>
+            </>
+          )}
+
+          {/* ===== Terminé ===== */}
+          {step === 'done' && (
+            <>
+              <h2>Mot de passe modifié</h2>
+              <p className="auth-subtitle">Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
+
+              <p className="auth-success">Votre mot de passe a bien été mis à jour.</p>
+
+              <button type="button" className="auth-submit-btn" style={{ width: '100%' }} onClick={() => navigate('/login')}>
+                Se connecter
+              </button>
+            </>
+          )}
+
+          {step !== 'done' && (
+            <p className="auth-switch">
+              <Link to="/login">Retour à la connexion</Link>
+            </p>
+          )}
         </div>
-
-        {/* ===== Étape 1 : adresse e-mail ===== */}
-        {step === 'email' && (
-          <>
-            <h2>Mot de passe oublié</h2>
-            <p className="auth-subtitle">
-              Entrez votre email, nous vous enverrons un code à 6 chiffres pour réinitialiser votre mot de passe.
-            </p>
-
-            {error && <p className="auth-error">{error}</p>}
-
-            <form onSubmit={handleEmailSubmit} className="auth-form">
-              <label>
-                Email
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="vous@email.com"
-                  autoComplete="email"
-                  required
-                />
-              </label>
-
-              <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
-                {isSubmitting ? 'Envoi...' : 'Envoyer le code'}
-              </button>
-            </form>
-          </>
-        )}
-
-        {/* ===== Étape 2 : code reçu et nouveau mot de passe ===== */}
-        {step === 'code' && (
-          <>
-            <h2>Saisissez votre code</h2>
-            <p className="auth-subtitle">
-              Code envoyé à {email.trim()}.{' '}
-              <button
-                type="button"
-                className="auth-link-btn"
-                onClick={() => {
-                  setStep('email');
-                  setError('');
-                  setInfo('');
-                  setVerified(false);
-                }}
-              >
-                Changer d'adresse
-              </button>
-            </p>
-
-            {info && <p className="auth-success">{info}</p>}
-            {error && <p className="auth-error">{error}</p>}
-
-            <form onSubmit={handleCodeSubmit} className="auth-form">
-              <label>
-                Code à 6 chiffres
-                <input
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/[^0-9\s]/g, ''))}
-                  placeholder="123456"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={10}
-                  className="auth-code-input"
-                  required
-                  autoFocus
-                />
-              </label>
-
-              <label>
-                Nouveau mot de passe
-                <input
-                  type={showPasswords ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="8 caractères minimum"
-                  autoComplete="new-password"
-                  required
-                />
-              </label>
-
-              <label>
-                Confirmer le mot de passe
-                <input
-                  type={showPasswords ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Retapez le mot de passe"
-                  autoComplete="new-password"
-                  required
-                />
-              </label>
-
-              <button type="button" className="auth-link-btn" onClick={() => setShowPasswords(!showPasswords)}>
-                {showPasswords ? 'Masquer' : 'Afficher'} les mots de passe
-              </button>
-
-              <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
-                {isSubmitting ? 'Vérification...' : 'Changer le mot de passe'}
-              </button>
-
-              <button
-                type="button"
-                className="auth-secondary-btn"
-                onClick={handleResend}
-                disabled={cooldown > 0 || isSubmitting}
-              >
-                {cooldown > 0 ? `Renvoyer le code (${cooldown} s)` : 'Renvoyer le code'}
-              </button>
-            </form>
-          </>
-        )}
-
-        {/* ===== Étape 3 : double authentification (seulement si elle est activée sur le compte) ===== */}
-        {step === 'mfa' && (
-          <>
-            <h2>Double authentification</h2>
-            <p className="auth-subtitle">
-              Votre compte est protégé. Ouvrez votre application d'authentification et saisissez
-              le code à 6 chiffres affiché pour Vela.
-            </p>
-
-            {error && <p className="auth-error">{error}</p>}
-
-            <form onSubmit={handleMfaSubmit} className="auth-form">
-              <label>
-                Code de l'application
-                <input
-                  type="text"
-                  value={totpCode}
-                  onChange={(e) => setTotpCode(e.target.value.replace(/[^0-9\s]/g, ''))}
-                  placeholder="123456"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={10}
-                  className="auth-code-input"
-                  required
-                  autoFocus
-                />
-              </label>
-
-              <button type="submit" className="auth-submit-btn" disabled={isSubmitting}>
-                {isSubmitting ? 'Vérification...' : 'Valider et changer le mot de passe'}
-              </button>
-            </form>
-          </>
-        )}
-
-        {/* ===== Terminé ===== */}
-        {step === 'done' && (
-          <>
-            <h2>Mot de passe modifié</h2>
-            <p className="auth-subtitle">Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
-
-            <p className="auth-success">Votre mot de passe a bien été mis à jour.</p>
-
-            <button type="button" className="auth-submit-btn" style={{ width: '100%' }} onClick={() => navigate('/login')}>
-              Se connecter
-            </button>
-          </>
-        )}
-
-        {step !== 'done' && (
-          <p className="auth-switch">
-            <Link to="/login">Retour à la connexion</Link>
-          </p>
-        )}
       </div>
+
+      {/* AJOUT : panneau Vela, placé à gauche par AuthSplit.css (ordinateur seulement) */}
+      <AuthShowcase
+        title="Retrouvez l'accès à votre maison"
+        text="Réinitialisez votre mot de passe en quelques instants et reprenez la surveillance de vos détecteurs."
+      />
     </div>
   );
 }

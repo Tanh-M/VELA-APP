@@ -1,11 +1,10 @@
 /* =====================================================================
-   Mise en page des pages Connexion et Inscription
+   Mise en page des pages Connexion, Inscription et Mot de passe oublié
    - téléphone / tablette : la carte seule, centrée (comme avant) ;
-   - ordinateur (960 px et plus) : formulaire à gauche, panneau Vela à droite.
-   Ce fichier ne change RIEN pour les autres pages (mot de passe oublié, etc.).
+   - ordinateur (960 px et plus) : panneau Vela à GAUCHE, formulaire à DROITE.
    ===================================================================== */
 
-/* Conteneur du formulaire : il garde la carte centrée, comme avant */
+/* Conteneur du formulaire : il garde la carte centrée */
 .auth-split-form {
   width: 100%;
   display: flex;
@@ -63,9 +62,18 @@
 @media (min-width: 960px) {
   .auth-page.auth-split {
     display: grid;
-    grid-template-columns: minmax(420px, 1fr) minmax(0, 1.1fr);
+    /* MODIFIÉ : colonne 1 (gauche) = panneau Vela, plus large
+                 colonne 2 (droite) = formulaire */
+    grid-template-columns: minmax(0, 1.1fr) minmax(420px, 1fr);
     align-items: stretch;
     padding: 0;
+  }
+
+  /* AJOUT : le panneau passe en premier (à gauche),
+     même s'il est écrit après le formulaire dans le JSX.
+     Sur téléphone, rien ne change. */
+  .auth-split .auth-showcase {
+    order: -1;
   }
 
   .auth-split-form {
